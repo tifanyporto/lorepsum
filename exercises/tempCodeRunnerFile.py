@@ -1,1 +1,0 @@
-polite_greet()
