@@ -1,13 +1,12 @@
 
 class Car:
     def workshop(self, color): # <- fabrica
-        self.color = color
         def decorator(func): # <- decorator
-            def warpper(): # <- Wrapper   
+            def wrapper(): # <- Wrapper   
                 message = func()
                 print(f'My car was painted {color}, {message}')
                 return message
-            return warpper
+            return wrapper
         return decorator
 
 
