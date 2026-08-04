@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, SmallInteger, String, DateTime, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, SmallInteger, String, DateTime, ForeignKey, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from app.database import Base
 
@@ -24,6 +24,12 @@ class Entity(Base):
 
 class Relationship(Base):
     __tablename__ = "relationship"
+    __table_args__ = (
+        UniqueConstraint("source_id", "target_id", "label"),
+        CheckConstraint("source_id != target_id"),
+        Index("ix_relationship_source", "source_id"),
+        Index("ix_relationship_target", "target_id")
+    )
 
     id = Column(Integer, primary_key=True)        
     source_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
