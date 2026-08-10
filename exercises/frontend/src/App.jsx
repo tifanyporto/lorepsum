@@ -6,7 +6,8 @@ function Book(props) {
 
 function App() {
   const [countBooks, setCountBooks] = useState(0)
-  const [addBooks, setAddBooks] = useState(props.title)
+  const [books, setBooks] = useState([])
+  const [newTitle, setNewTitle] = useState('')
   return (
     <>
   <h1>Lorepsum</h1>
@@ -14,13 +15,14 @@ function App() {
     <button onClick={() => setCountBooks(countBooks + 1)}>
       I read a book
     </button>
+    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)}/>
+    <button onClick={() => setBooks([...books, newTitle])}>Adicionar livro</button>
     <ul>
-    <Book title="Pride and Prejudice" />
-    <Book title="Crime and Punishment" />
-    <Book title="Moby-Dick" />
+      {books.map((book) => <Book title={book} key={book}/>)}     
     </ul>
     </>
   )
 }
 
 export default App
+
