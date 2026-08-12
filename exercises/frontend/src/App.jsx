@@ -10,7 +10,7 @@ function App() {
   const [newTitle, setNewTitle] = useState('')
   return (
     <>
-  <h1>Lorepsum</h1>
+  <h1 className="text-3xl font-bold text-blue-500">Lorepsum</h1>
       <p>Books read: {countBooks}</p>
     <button onClick={() => setCountBooks(countBooks + 1)}>
       I read a book
