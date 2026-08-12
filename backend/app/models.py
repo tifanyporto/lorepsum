@@ -28,7 +28,8 @@ class Relationship(Base):
         UniqueConstraint("source_id", "target_id", "label"),
         CheckConstraint("source_id != target_id"),
         Index("ix_relationship_source", "source_id"),
-        Index("ix_relationship_target", "target_id")
+        Index("ix_relationship_target", "target_id"),
+        CheckConstraint("weight BETWEEN 1 AND 3")
     )
 
     id = Column(Integer, primary_key=True)        
@@ -36,4 +37,4 @@ class Relationship(Base):
     target_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
     label = Column(String)         
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    weight = Column(SmallInteger, CheckConstraint("weight BETWEEN 1 AND 3"))
+    weight = Column(SmallInteger)
