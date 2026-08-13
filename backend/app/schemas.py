@@ -10,6 +10,9 @@ class EntityTypeRead(BaseModel):
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
+class EntityTypeUpdate(BaseModel):
+    name: str | None = None
+
 class EntityCreate(BaseModel):
     name: str
     entity_type_id: int
@@ -26,6 +29,12 @@ class EntityRead(BaseModel):
     updated_at: datetime
     archived_at: datetime | None
     model_config = ConfigDict(from_attributes=True)
+
+class EntityUpdate(BaseModel):
+    name: str | None = None
+    entity_type_id: int | None = None
+    description: str | None = None
+    attributes: dict | None = None
 
 
 class RelationshipCreate(BaseModel):
