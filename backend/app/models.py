@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, SmallInteger, String, DateTime, ForeignKey, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from app.database import Base
@@ -8,7 +8,7 @@ class EntityType(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 class Entity(Base):
     __tablename__ = "entity"
@@ -18,10 +18,10 @@ class Entity(Base):
     description = Column(String)
     entity_type_id = Column(Integer, ForeignKey("entity_type.id"), nullable=False)
     attributes = Column(JSONB, nullable=False, default=dict)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    archived_at = Column(DateTime, nullable=True)
-
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    archived_at = Column(DateTime(timezone=True), nullable=True)
+    
 class Relationship(Base):
     __tablename__ = "relationship"
     __table_args__ = (
@@ -36,5 +36,5 @@ class Relationship(Base):
     source_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
     target_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
     label = Column(String)         
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     weight = Column(SmallInteger)

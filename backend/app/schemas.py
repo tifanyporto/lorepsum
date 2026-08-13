@@ -51,3 +51,9 @@ class RelationshipRead(BaseModel):
     weight: int | None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class RelationshipUpdate(BaseModel):
+    source_id: int | None = None
+    target_id: int | None = None
+    label: str | None = None
+    weight: int  | None = None

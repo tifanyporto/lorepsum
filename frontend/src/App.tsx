@@ -30,7 +30,7 @@ function App() {
             setNewKind('')
           }}>
           <input className="border border-gray-300 rounded px-2 py-1" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='name' />
-          <input  value={newKind} onChange={(e) => setNewKind(e.target.value)} placeholder='kind' />
+          <input className="border border-gray-300 rounded px-2 py-1" value={newKind} onChange={(e) => setNewKind(e.target.value)} placeholder='kind' />
           <button className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap" type='submit'>Add entity</button>
             </form>
           <ul>
