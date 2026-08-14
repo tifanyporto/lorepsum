@@ -67,7 +67,15 @@ def list_entity(db = Depends(get_db)):
 def create_entity(payload: EntityCreate, db=Depends(get_db)):
     new_entity = Entity(name=payload.name, entity_type_id=payload.entity_type_id, description=payload.description, attributes=payload.attributes)
     db.add(new_entity)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        if payload.entity_type_id is None:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="invalid entity_type_id")
+        if payload.name is None:
+            b.rollback()
+            raise HTTPException(status_code=500, detail="invalid name")
     db.refresh(new_entity)
     return new_entity
 
@@ -98,7 +106,11 @@ def update_entity(entity_id: int, payload: EntityUpdate, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="entity not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(entity, field, value)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="invalid entity_type_id")
     db.refresh(entity)
     return entity
 # --------------------------------------------------------------------------------
