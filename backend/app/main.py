@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from app.database import get_db
 from app.models import EntityType, Entity, Relationship
 from app.schemas import EntityTypeCreate, EntityTypeRead, EntityTypeUpdate, EntityRead, EntityCreate, EntityUpdate, RelationshipCreate, RelationshipRead, RelationshipUpdate
@@ -7,6 +8,12 @@ from datetime import datetime, timezone
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/entity-types", response_model=list[EntityTypeRead])
 def list_entity_types(db = Depends(get_db)):
     return db.query(EntityType).all()
