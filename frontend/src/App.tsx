@@ -23,7 +23,8 @@ function EntityCard(
   entity: Entity, 
   typeName?: string, 
   onDelete: (id: number) => void,
-  onEdit:(entity: Entity) => void
+  onEdit:(entity: Entity) => void,
+  onCancel:() => void
 }) { 
   return <li className='p-3 m-4 rounded-lg border border-gray-200 bg-white shadow-sm'>
     <span className='font-medium'>{entity.name}</span>{' - '}
@@ -60,6 +61,12 @@ function App() {
     setNewName(entity.name)
     setNewTypeId(String(entity.entity_type_id))
     setEditingId(entity.id)
+  }
+
+  function handleCancel() {
+    setNewName('')
+    setNewTypeId('')
+    setEditingId(null)
   }
 
   return (
@@ -103,12 +110,13 @@ function App() {
             {types.map(t=> <option value={t.id} key={t.id}>{t.name}</option>)}
           </select>
 
-          <button className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap" type='submit'>Add entity</button>
+          <button className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap" type='submit'>add entity</button>
+          {editingId && <button type='button' className='bg-red-500 text-white rounded px-3 py-1 hover:bg-red-600 whitespace-nowrap' onClick={() => handleCancel()}>cancel</button>}
             </form>
           <ul>
             {entities.map((entity) => {
               const typeName = types.find(t => t.id === entity.entity_type_id)?.name
-              return <EntityCard entity={entity} typeName={typeName} onDelete={handleDelete} onEdit={handleEdit} key={entity.id} />
+              return <EntityCard entity={entity} typeName={typeName} onDelete={handleDelete} onEdit={handleEdit} onCancel={handleCancel} key={entity.id} />
             })} 
           </ul>
         </div> 
