@@ -1,8 +1,21 @@
 # Lorepsum — Direção de Design
 
 > Documento **vivo** — referência das decisões de design da interface. Atualizar conforme a gente refina.
-> **Referência visual:** [`docs/design-mockup.html`](./design-mockup.html) (abrir no navegador).
-> Última revisão: 2026-08-13.
+> Última revisão: 2026-08-18.
+
+---
+
+## Mockups (índice visual)
+
+Todos em `docs/design/` — abrir no navegador.
+
+| Mockup | O que é |
+|---|---|
+| [home-landing.html](./home-landing.html) | **Tela inicial** — constelação ambiente + estrela roxa pulsante + log in. Theme-aware (claro/escuro). |
+| [home-chat.html](./home-chat.html) | **Chat / onboarding** — a conversa que semeia a lore. *(WIP — será refeito no novo fluxo: conversa primeiro, constelação depois da resposta.)* |
+| [design-mockup.html](./design-mockup.html) | **Telas do app** — Constelação (grafo) + Foco (detalhe da entidade). |
+| [brand-logo.html](./brand-logo.html) | **Símbolo** (logomark) — o nó-eu irradiando conexões. |
+| [brand-wordmark.html](./brand-wordmark.html) | **Wordmark** — `lorepsum.` em IBM Plex Mono, ponto roxo. |
 
 ---
 
@@ -87,6 +100,13 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 4. CTA natural: **"quer guardar essa lore?"** → cadastro "sem perceber" (ela não quer perder o que criou).
 
 **Resolve o persistir×degustação:** pro visitante é **degustação que vira REAL no cadastro** ("reivindique sua lore"). Implicação: a lore nasce **anônima** (sessão) e é **"reivindicada"** (amarrada à conta) no cadastro → projetar o **auth** (adiado) pra suportar esse *claim*.
+
+**FLUXO DE TELAS (UI) — refinado 2026-08-17** (mockups: `docs/home-landing.html`, `docs/home-chat.html`):
+- **(0) Landing** — constelação **ambiente** (fraca, sem rótulo, só atmosfera) + frase editorial ("your lore" / "Everything you love, connected in a constellation") + **estrela roxa PULSANTE** (o convite **sem palavras** — não descreve o que faz) + **"log in"** (ghost pill) no canto sup. dir. pra quem já tem conta. **Theme-aware** (claro padrão / escuro). Minimalista, delicado.
+- **(1) clica na estrela** → a **página DESCE** numa animação → 
+- **(2) Chat SÓ conversa** — **SEM a constelação ainda** — o agente faz a 1ª pergunta (casual, não questionário) →
+- **(3) usuário responde** → **AÍ** entra a **animação de criação da constelação** (a surpresa **nasce da resposta**, não é pré-mostrada). O agente comenta o item (interação real) e segue ("e você, quem é?" → nomeia o nó-eu).
+- **"log in" (canto)** é literal-ok (quem volta sabe o que quer); o "sem literalidade" vale pro NOVATO. Quem já está logado idealmente nem vê a landing (cai na lore) — toca o auth (adiado).
 
 **A decidir ainda:** **dedup / find-or-create** — não duplicar "Nolan" se já existe (o mesmo find-or-create previsto no funil).
 

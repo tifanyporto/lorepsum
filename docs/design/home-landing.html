@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorepsum — home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#f5f1e8; --ink:#26231d; --muted:#8a8072; --line:#e0d9ca; --accent:#6b4e96;
+    --accent-line:#c3b0dd;
+    --serif:'Fraunces',Georgia,serif; --mono:'IBM Plex Mono',monospace;
+  }
+  :root[data-theme="dark"]{
+    --canvas:#0e0d0c; --ink:#ece7dd; --muted:#8b857a; --line:#2a2723; --accent:#ad8bd4;
+    --accent-line:#6f5c95;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--mono);
+    -webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+  .home{position:relative;height:100vh;display:flex;flex-direction:column}
+
+  .ambient{position:absolute;inset:0;z-index:0}
+  .ambient svg{width:100%;height:100%}
+  .ax{stroke:var(--line);stroke-width:1}
+  .an{fill:var(--muted);opacity:.5}
+  .ap{fill:var(--accent-line)}
+
+  .topbar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:26px 28px}
+  .lockup{display:flex;align-items:center;gap:10px}
+  .lockup svg{width:24px;height:24px}
+  .wordmark{font-weight:500;font-size:17px;letter-spacing:-.02em}
+  .wordmark span{color:var(--accent)}
+  .right{display:flex;align-items:center;gap:14px}
+  .toggle{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:none;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:border-color .2s,color .2s}
+  .toggle:hover{border-color:var(--accent);color:var(--accent)}
+  .toggle svg{width:16px;height:16px}
+  .login{font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;letter-spacing:.02em;
+    border:1px solid var(--line);border-radius:20px;padding:8px 16px;transition:border-color .2s,color .2s}
+  .login:hover{border-color:var(--accent);color:var(--accent)}
+
+  .center{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:0 24px 40px}
+  .kicker{font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+  .head{font-family:var(--serif);font-weight:400;font-size:52px;line-height:1.1;max-width:640px}
+  .head .p{color:var(--accent)}
+
+  .star{position:relative;width:20px;height:20px;margin-top:64px;cursor:pointer}
+  .star .core{position:absolute;inset:0;border-radius:50%;background:var(--accent);transition:transform .25s}
+  .star .pulse{position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--accent);
+    animation:pulse 2.6s cubic-bezier(.2,.6,.3,1) infinite}
+  .star .pulse.b{animation-delay:1.3s}
+  .star:hover .core{transform:scale(1.25)}
+  @keyframes pulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(4);opacity:0}}
+</style>
+</head>
+<body>
+  <div class="home">
+
+    <div class="ambient">
+      <svg viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <line class="ax" x1="120" y1="120" x2="230" y2="70"/>
+        <line class="ax" x1="230" y1="70" x2="90" y2="220"/>
+        <line class="ax" x1="880" y1="110" x2="780" y2="200"/>
+        <line class="ax" x1="880" y1="110" x2="940" y2="240"/>
+        <line class="ax" x1="150" y1="500" x2="260" y2="560"/>
+        <line class="ax" x1="800" y1="520" x2="700" y2="470"/>
+        <line class="ax" x1="800" y1="520" x2="900" y2="580"/>
+        <circle class="an" cx="120" cy="120" r="3"/><circle class="ap" cx="230" cy="70" r="3.4"/>
+        <circle class="an" cx="90" cy="220" r="2.6"/><circle class="an" cx="880" cy="110" r="3"/>
+        <circle class="an" cx="780" cy="200" r="2.6"/><circle class="ap" cx="940" cy="240" r="3.2"/>
+        <circle class="an" cx="150" cy="500" r="2.6"/><circle class="ap" cx="260" cy="560" r="3.2"/>
+        <circle class="an" cx="800" cy="520" r="3"/><circle class="an" cx="700" cy="470" r="2.6"/>
+        <circle class="an" cx="900" cy="580" r="2.6"/>
+      </svg>
+    </div>
+
+    <header class="topbar">
+      <div class="lockup">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <line x1="23" y1="24" x2="10" y2="17" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="23" y1="24" x2="37" y2="13" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+          <line x1="23" y1="24" x2="17" y2="38" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+          <line x1="23" y1="24" x2="37" y2="35" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="10" cy="17" r="2.8" fill="var(--ink)"/><circle cx="37" cy="13" r="2.8" fill="var(--ink)"/>
+          <circle cx="17" cy="38" r="2.8" fill="var(--ink)"/><circle cx="37" cy="35" r="2.8" fill="var(--ink)"/>
+          <circle cx="23" cy="24" r="5.6" fill="var(--ink)"/>
+        </svg>
+        <div class="wordmark">lorepsum<span>.</span></div>
+      </div>
+      <div class="right">
+        <button class="toggle" id="toggle" aria-label="theme">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+        </button>
+        <a class="login" href="#">log in</a>
+      </div>
+    </header>
+
+    <div class="center">
+      <p class="kicker">your lore</p>
+      <h1 class="head">Everything you love,<br>connected in a <span class="p">constellation</span>.</h1>
+      <div class="star" role="button" aria-label="begin">
+        <span class="pulse"></span><span class="pulse b"></span><span class="core"></span>
+      </div>
+    </div>
+
+  </div>
+  <script>
+    document.getElementById('toggle').addEventListener('click', function(){
+      var r = document.documentElement;
+      r.setAttribute('data-theme', r.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  </script>
+</body>
+</html>
