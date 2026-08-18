@@ -81,7 +81,6 @@ function App() {
     .then(res => res.json())
     .then(data => {
       setRelationships(data)
-      setLoading(false)
     })
   }, [])
 
