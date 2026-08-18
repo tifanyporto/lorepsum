@@ -12,7 +12,7 @@ Todos em `docs/design/` — abrir no navegador.
 | Mockup | O que é |
 |---|---|
 | [home-landing.html](./home-landing.html) | **Tela inicial** — constelação ambiente + estrela roxa pulsante + log in. Theme-aware (claro/escuro). |
-| [home-chat.html](./home-chat.html) | **Chat / onboarding** — a conversa que semeia a lore. *(WIP — será refeito no novo fluxo: conversa primeiro, constelação depois da resposta.)* |
+| [home-chat.html](./home-chat.html) | **Onboarding conversacional** (protótipo interativo) — clica na estrela → desce pro chat (moldura + "digitando…") → responde → a constelação nasce ao lado. Fluxo **DEFINIDO**. |
 | [design-mockup.html](./design-mockup.html) | **Telas do app** — Constelação (grafo) + Foco (detalhe da entidade). |
 | [brand-logo.html](./brand-logo.html) | **Símbolo** (logomark) — o nó-eu irradiando conexões. |
 | [brand-wordmark.html](./brand-wordmark.html) | **Wordmark** — `lorepsum.` em IBM Plex Mono, ponto roxo. |
@@ -104,8 +104,9 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 **FLUXO DE TELAS (UI) — refinado 2026-08-17** (mockups: `docs/home-landing.html`, `docs/home-chat.html`):
 - **(0) Landing** — constelação **ambiente** (fraca, sem rótulo, só atmosfera) + frase editorial ("your lore" / "Everything you love, connected in a constellation") + **estrela roxa PULSANTE** (o convite **sem palavras** — não descreve o que faz) + **"log in"** (ghost pill) no canto sup. dir. pra quem já tem conta. **Theme-aware** (claro padrão / escuro). Minimalista, delicado.
 - **(1) clica na estrela** → a **página DESCE** numa animação → 
-- **(2) Chat SÓ conversa** — **SEM a constelação ainda** — o agente faz a 1ª pergunta (casual, não questionário) →
-- **(3) usuário responde** → **AÍ** entra a **animação de criação da constelação** (a surpresa **nasce da resposta**, não é pré-mostrada). O agente comenta o item (interação real) e segue ("e você, quem é?" → nomeia o nó-eu).
+- **(2) Chat SÓ conversa** — **SEM a constelação ainda**. É uma **moldura/card** (cabeçalho: símbolo + `lorepsum` + status `typing…`), **centralizado**. As falas do agente **entram uma a uma, com indicador "digitando…"** (três pontinhos) e **começam sozinhas** ao chegar no chat — parece IA conversando, não um form. 1ª pergunta casual ("hey." → "tell me about something you love…").
+- **(3) usuário responde** → o card **desliza pra um lado** e a **constelação nasce do OUTRO lado** (lado a lado em tela larga; empilhado — constelação em cima — em tela estreita). A surpresa **nasce da resposta**, não é pré-mostrada. O agente comenta ("oh — Interstellar. there it is →") e segue ("and you — who are you?" → nomeia o **nó-eu**).
+- **Detalhes técnicos do protótipo:** streaming via `setTimeout` (typing → mensagem); bloom via classe `.born` no SVG (arestas com `stroke-dashoffset`, nós com `scale`+`opacity`, `transition-delay` escalonado); card via classe `.bloomed` (anima `left`/`transform`); tema claro/escuro por `data-theme`. **No app real vira React/TS** (estado do passo, componentes) — o HTML é só a referência visual/comportamental.
 - **"log in" (canto)** é literal-ok (quem volta sabe o que quer); o "sem literalidade" vale pro NOVATO. Quem já está logado idealmente nem vê a landing (cai na lore) — toca o auth (adiado).
 
 **A decidir ainda:** **dedup / find-or-create** — não duplicar "Nolan" se já existe (o mesmo find-or-create previsto no funil).

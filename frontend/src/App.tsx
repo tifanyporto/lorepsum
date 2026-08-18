@@ -12,22 +12,36 @@ type EntityType = {
   name: string
 }
 
+type Relationship = {
+  id: number
+  source_id: number
+  target_id: number
+  label: string
+}
+
+
 function EntityCard(
   {
   entity, 
   typeName, 
+  sourceLabel,
+  targetName,
   onDelete,
   onEdit
 }:
 {
   entity: Entity, 
   typeName?: string, 
+  sourceLabel?: string
+  targetName?: string
   onDelete: (id: number) => void,
   onEdit:(entity: Entity) => void
 }) { 
   return <li className='p-3 m-4 rounded-lg border border-gray-200 bg-white shadow-sm'>
-    <span className='font-medium'>{entity.name}</span>{' - '}
-    <span className='font-medium text-gray-500'>{typeName}</span>{' '}
+    <span className='font-medium'>{entity.name}</span>{' '}
+    <span className='font-medium text-gray-500'>{sourceLabel}</span>
+    <span className='font-medium text-gray-500'>{targetName} </span>
+    <span className='font-medium text-gray-500'>({typeName})</span>{' '}
     <button className='ml-2 text-sm text-gray-400 hover:text-red-600' onClick={() => onDelete(entity.id)}>delete</button>
     <button className='ml-2 text-sm text-gray-400 hover:text-red-600' onClick={() => onEdit(entity)}>edit</button>
   </li>
@@ -43,6 +57,10 @@ function App() {
   const [ editingId, setEditingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [relationships, setRelationships] = useState<Relationship[]>([])
+  const [newSourceId, setNewSourceId] = useState('')
+  const [newTargetId, setNewTargetId] = useState('')
+  const [newLabel, setNewLabel] = useState('')
 
   useEffect(()=> {
     fetch('http://localhost:8000/entities')
@@ -58,6 +76,13 @@ function App() {
     fetch("http://localhost:8000/entity-types")
     .then(res => res.json())
     .then(data => setTypes(data))
+
+    fetch('http://localhost:8000/relationships')
+    .then(res => res.json())
+    .then(data => {
+      setRelationships(data)
+      setLoading(false)
+    })
   }, [])
 
   function handleDelete(id:number) {
@@ -112,7 +137,6 @@ function App() {
           }
           }}>
           <input className="border border-gray-300 rounded px-2 py-1" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='name' />
-          
           <select className="border border-gray-300 rounded px-2 py-1" value={newTypeId} onChange={e => setNewTypeId(e.target.value)}>
             <option value="">type...</option>
             {types.map(t=> <option value={t.id} key={t.id}>{t.name}</option>)}
@@ -121,13 +145,47 @@ function App() {
           <button className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap" type='submit'>add entity</button>
           {editingId && <button type='button' className='bg-red-500 text-white rounded px-3 py-1 hover:bg-red-600 whitespace-nowrap' onClick={() => handleCancel()}>cancel</button>}
             </form>
+            <form onSubmit={(e)=>{
+              e.preventDefault()
+              if(newSourceId === newTargetId){
+                alert('source and target must be different')
+                return
+              }fetch('http://localhost:8000/relationships', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({source_id: Number(newSourceId), target_id: Number(newTargetId), label: newLabel})
+              })              
+              .then(res => res.json())
+              .then(created =>{
+                setRelationships([...relationships, created])
+                setNewLabel('')
+                setNewSourceId('')
+                setNewTargetId('')
+                
+              })
+            }}>
+            <select className="border border-gray-300 rounded px-2 py-1" value={newSourceId} onChange={e =>
+              setNewSourceId(e.target.value)}>
+              <option value="">source...</option>
+              {entities.map(e=> <option value={e.id} key={e.id}>{e.name}</option>)}
+            </select>          
+            <input className="border border-gray-300 rounded px-2 py-1" value={newLabel} onChange={(e)=> setNewLabel(e.target.value)} placeholder='label...' />
+            <select className="border border-gray-300 rounded px-2 py-1" value={newTargetId} onChange={e=> setNewTargetId(e.target.value)}>
+              <option value="">target...</option>
+              {entities.map(e=> <option value={e.id} key={e.id}>{e.name}</option>)}
+            </select>
+            <button type="submit" className='bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap'>add link</button>
+            </form>
             {loading && <p className='text-purple-800'>Loading...</p>}
             {error && <p className='text-purple-800'>something wrong...</p>}
             {!loading && !error && (
           <ul>
             {entities.map((entity) => {
+              const rel = relationships.find( r=> r.source_id === entity.id) 
+              const sourceLabel = rel?.label
+              const targetName = entities.find(e => e.id === rel?.target_id)?.name
               const typeName = types.find(t => t.id === entity.entity_type_id)?.name
-              return <EntityCard entity={entity} typeName={typeName} onDelete={handleDelete} onEdit={handleEdit} key={entity.id} />
+              return <EntityCard entity={entity} typeName={typeName} sourceLabel={sourceLabel} targetName={targetName} onDelete={handleDelete} onEdit={handleEdit} key={entity.id} />
             })} 
           </ul>
           )}
