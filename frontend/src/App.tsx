@@ -23,8 +23,7 @@ function EntityCard(
   entity: Entity, 
   typeName?: string, 
   onDelete: (id: number) => void,
-  onEdit:(entity: Entity) => void,
-  onCancel:() => void
+  onEdit:(entity: Entity) => void
 }) { 
   return <li className='p-3 m-4 rounded-lg border border-gray-200 bg-white shadow-sm'>
     <span className='font-medium'>{entity.name}</span>{' - '}
@@ -42,11 +41,20 @@ function App() {
   const [ newName, setNewName] = useState('')
   const [ newTypeId, setNewTypeId] = useState('')
   const [ editingId, setEditingId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(()=> {
     fetch('http://localhost:8000/entities')
     .then(res => res.json())
-    .then(data => setEntities(data))
+    .then(data => {
+      setEntities(data)
+      setLoading(false)
+    })
+    .catch(() =>{
+      setError(true)
+      setLoading(false)
+    } )
     fetch("http://localhost:8000/entity-types")
     .then(res => res.json())
     .then(data => setTypes(data))
@@ -113,12 +121,16 @@ function App() {
           <button className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600 whitespace-nowrap" type='submit'>add entity</button>
           {editingId && <button type='button' className='bg-red-500 text-white rounded px-3 py-1 hover:bg-red-600 whitespace-nowrap' onClick={() => handleCancel()}>cancel</button>}
             </form>
+            {loading && <p className='text-purple-800'>Loading...</p>}
+            {error && <p className='text-purple-800'>something wrong...</p>}
+            {!loading && !error && (
           <ul>
             {entities.map((entity) => {
               const typeName = types.find(t => t.id === entity.entity_type_id)?.name
-              return <EntityCard entity={entity} typeName={typeName} onDelete={handleDelete} onEdit={handleEdit} onCancel={handleCancel} key={entity.id} />
+              return <EntityCard entity={entity} typeName={typeName} onDelete={handleDelete} onEdit={handleEdit} key={entity.id} />
             })} 
           </ul>
+          )}
         </div> 
   )
 }

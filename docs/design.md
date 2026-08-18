@@ -70,6 +70,28 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 
 ---
 
+## ✨ IDEIA GUARDADA (2026-08-17) — Home com AGENTE DE IA (funil de entrada)
+
+**Conceito (dela):** na home, um **agente de IA** pergunta ao usuário algo que ele ama (filme / livro / personagem / qualquer coisa). Com a resposta, o app **semeia uma "lore"** — cria entidades relacionadas + conexões automaticamente. Resolve o **cold-start** (grafo vazio não tem o que explorar).
+
+**Por que encaixa:** é a alma do Lorepsum ("uma lore a partir do que você ama") **E** é a versão **conversacional com IA** da camada já decidida **"perfil = funil de entrada"** (catálogo de perguntas que cria/liga entities).
+
+**Como funcionaria:** resposta → o **backend** chama um **LLM** (Claude, API Anthropic) que devolve **JSON estruturado** (entidades + relacionamentos no formato modelado) → o backend **cria via os endpoints CRUD** que ela construiu → constelação semeada. O "**simular**" pode ser a **animação** dos nós surgindo.
+
+**Regra arquitetural (crítica):** a chamada do LLM fica **NO BACKEND** — a chave da API é **segredo** (`.env`, igual a senha do banco), NUNCA no frontend. A saída do LLM é **estruturada** (JSON), validada com Pydantic.
+
+**Público-alvo = VISITANTE não cadastrado** (atrair sem invadir). Padrão **"valor primeiro, pedido depois"** (show-before-ask): entrega a lore ANTES de pedir cadastro. Fluxo (ordem invertida de propósito):
+1. Pergunta o **gosto** primeiro (isca de baixa fricção — parece jogo, não formulário).
+2. Gera + mostra a lore (o "wow").
+3. Pergunta o **nome** depois (a pessoa já está investida) — e o nome **nomeia o NÓ-EU** (o self, centro da constelação; o gosto irradia a partir dela). Onboarding constrói o nó-eu + semeia o grafo numa tacada.
+4. CTA natural: **"quer guardar essa lore?"** → cadastro "sem perceber" (ela não quer perder o que criou).
+
+**Resolve o persistir×degustação:** pro visitante é **degustação que vira REAL no cadastro** ("reivindique sua lore"). Implicação: a lore nasce **anônima** (sessão) e é **"reivindicada"** (amarrada à conta) no cadastro → projetar o **auth** (adiado) pra suportar esse *claim*.
+
+**A decidir ainda:** **dedup / find-or-create** — não duplicar "Nolan" se já existe (o mesmo find-or-create previsto no funil).
+
+---
+
 ## 5. Em aberto / a decidir
 
 - **Ordem de construção (fork):** **A)** grafo visual como centro desde já (ambicioso, precisa de lib de layout) × **B)** exploração por **links** primeiro (a tela de Foco já entrega o "focar & pular"), e a constelação visual como vitrine depois. **Recomendação: B primeiro** (de dentro pra fora + YAGNI + curva de aprendizado). **NÃO decidido.**
