@@ -43,7 +43,13 @@
 > Despeje tudo aqui. Depois a gente classifica cada uma (fundação? feature? algum dia?) e move pro balde certo.
 
 - Conexão de usuário via lore's em comum
-
+- Sugestão de conexões entre entidades:
+Na tela do Lorepsum, o usuário pode visualizar um aviso de "Possível conexão" entre entidades que já cadastrou.
+Possível conexão
+Jogos Vorazes ↔ Can't Catch Me Now
+Can't Catch Me Now, de Olivia Rodrigo. Motivo: faz parte da trilha sonora de Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes.
+[Conectar] [Dispensar]
+Ao clicar em Conectar, a relação é criada e uma linha passa a conectar visualmente as duas entidades no mapa. Ao clicar em Dispensar, a sugestão é removida.
 ---
 
 ### Legenda dos baldes
