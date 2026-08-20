@@ -32,14 +32,14 @@ function EntityCard(
 {
   entity: Entity, 
   typeName?: string, 
-  sourceLabel?: string
-  targetName?: string
+  sourceLabel?: string[]
+  targetName?: string[]
   onDelete: (id: number) => void,
   onEdit:(entity: Entity) => void
 }) { 
   return <li className='p-3 m-4 rounded-lg border border-gray-200 bg-white shadow-sm'>
     <span className='font-medium'>{entity.name}</span>{' '}
-    <span className='font-medium text-gray-500'>{sourceLabel}</span>
+    <span className='font-medium text-gray-500'>{sourceLabel} </span>
     <span className='font-medium text-gray-500'>{targetName} </span>
     <span className='font-medium text-gray-500'>({typeName})</span>{' '}
     <button className='ml-2 text-sm text-gray-400 hover:text-red-600' onClick={() => onDelete(entity.id)}>delete</button>
@@ -180,9 +180,11 @@ function App() {
             {!loading && !error && (
           <ul>
             {entities.map((entity) => {
-              const rel = relationships.find( r=> r.source_id === entity.id) 
-              const sourceLabel = rel?.label
-              const targetName = entities.find(e => e.id === rel?.target_id)?.name
+              const rel = relationships.filter( r=> r.source_id === entity.id) 
+              const sourceLabel = rel?.map( r => r.label)
+              const targetId = rel?.map(t => t.target_id)
+              const targetName = targetId.map(n => entities.find(e => e.id === n)?.name ?? '???')
+              
               const typeName = types.find(t => t.id === entity.entity_type_id)?.name
               return <EntityCard entity={entity} typeName={typeName} sourceLabel={sourceLabel} targetName={targetName} onDelete={handleDelete} onEdit={handleEdit} key={entity.id} />
             })} 
