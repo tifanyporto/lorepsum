@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@theme {
+  --color-desk:   #e6dfce;   /* mesa — fundo externo */
+  --color-canvas: #f6f2e9;   /* tela */
+  --color-ink:    #26231d;   /* tinta — texto */
+  --color-muted:  #8a8072;   /* apagado */
+  --color-line:   #d7cebc;   /* linha fina */
+  --color-accent: #6b4e96;   /* roxo — ameixa */
+
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-mono:  'IBM Plex Mono', monospace;
+}
