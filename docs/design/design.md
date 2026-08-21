@@ -44,6 +44,20 @@ O valor do Lorepsum não é *guardar* coisas (isso é app de notas / catálogo) 
 
 ---
 
+## Decisão (2026-08-21) — Foco mostra só conexões de SAÍDA
+
+Na tela de **Foco**, listar apenas as conexões onde a entidade é o **source** (as que ela "afirma"). **Não** mostrar as de entrada (onde ela é o target).
+
+**Por quê:** o `label` é **texto livre criado pelo usuário** — o sistema não tem como saber que "son of" é o inverso de "father of". Logo, **inverter o rótulo automaticamente é impossível**, e exibir a conexão de entrada com o rótulo cru lê de trás pra frente ("Batman son of Robin"). Mostrar os dois sentidos também vira **redundância** quando o usuário guardou a recíproca (ex.: `father of` + `son of` no mesmo par).
+
+**A bidirecionalidade é trabalho do GRAFO** (a Constelação, ao lado do Foco): lá a conexão é uma **linha entre dois nós visíveis**, e a direção é **espacial** — o rótulo mora na aresta, não é lido do ponto de vista de quem está em foco, então o problema de gramática não existe.
+
+Divisão: **Foco = as afirmações de saída de UMA entidade (leem certo); Grafo = a teia inteira, os dois sentidos, resolvidos pela posição.**
+
+*(Se um dia existir um vocabulário de rótulos **pré-definidos** com inversos conhecidos, dá pra reabrir e mostrar a entrada com frase correta — mas não com texto livre.)*
+
+---
+
 ## 4. Identidade visual (decisões travadas até aqui)
 
 - **Modo:** **claro (papel) é o PADRÃO**; **escuro (noite) é alternância**. Mesmo desenho nos dois — a troca é só **swap de paleta** (estrutura, tipografia e layout não mudam).
