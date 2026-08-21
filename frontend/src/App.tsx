@@ -1,23 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-
-type Entity = { 
-  id: number  
-  name: string  
-  entity_type_id: number 
-}
-
-type EntityType = {
-  id: number
-  name: string
-}
-
-type Relationship = {
-  id: number
-  source_id: number
-  target_id: number
-  label: string
-}
+import type { Entity, EntityType, Relationship } from './types'
 
 
 function EntityCard(
