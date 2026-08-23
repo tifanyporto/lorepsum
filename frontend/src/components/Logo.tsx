@@ -1,6 +1,6 @@
 function Logo() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className="w-16 h-16">
+    <svg viewBox="0 0 48 48" fill="none" className="w-12 h-12">
       <line x1="23" y1="24" x2="10" y2="17" stroke="var(--color-ink)" strokeWidth="2.2" strokeLinecap="round" />
       <line x1="23" y1="24" x2="37" y2="13" stroke="var(--color-accent)" strokeWidth="2.6" strokeLinecap="round" />
       <line x1="23" y1="24" x2="17" y2="38" stroke="var(--color-ink)" strokeWidth="2.2" strokeLinecap="round" />

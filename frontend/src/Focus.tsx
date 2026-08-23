@@ -2,6 +2,8 @@ import { useState, useEffect} from "react"
 import type {EntityType, Entity, Relationship} from "./types"
 import ThemeToggle from "./components/ThemeToggle"
 import Logo from "./components/Logo"
+import Search from "./components/Search"
+
 
 function Focus(){
     const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
@@ -32,9 +34,10 @@ function Focus(){
     const conn = relationships.filter( r => r.source_id === entity?.id)
     return (
         <div className="min-h-screen bg-canvas">
-            <div className="flex justify-between items-center p-4">
-                <Logo />
-                <ThemeToggle />
+            <div className="flex items-center justify-between gap-3 p-4">
+              <Logo />
+              <Search entities={entities} onSelect={setFocusedId} />
+              <ThemeToggle />
             </div>
                 <div className="max-w-xl mx-auto px-6 py-16">
                     <h2 className="font-mono text-muted text-sm uppercase tracking-wider mb-4">{type?.name}</h2>
