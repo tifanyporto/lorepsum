@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorepsum — plano do design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#f6f2e9; --ink:#26231d; --muted:#8a8072; --faint:#efe9dc; --line:#ddd4c3;
+    --accent:#6b4e96; --accent-bg:#ece6f2; --card:#fffdf8;
+    --serif:'Fraunces',Georgia,serif; --mono:'IBM Plex Mono',monospace;
+  }
+  :root[data-theme="dark"]{
+    --canvas:#0e0d0c; --ink:#ece7dd; --muted:#8b857a; --faint:#1c1a17; --line:#332f29;
+    --accent:#ad8bd4; --accent-bg:#211b2b; --card:#141210;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--mono);
+    -webkit-font-smoothing:antialiased;padding:34px 20px 60px;line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand svg{width:34px;height:34px}
+  .title{font-family:var(--serif);font-size:30px;color:var(--ink)}
+  .title span{color:var(--accent)}
+  .theme{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;
+    padding:7px 10px;cursor:pointer;font-family:var(--mono);font-size:12px}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:20px}
+  .lead{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:11px;padding:14px 16px;margin-bottom:26px;font-size:13.5px}
+  .lead b{color:var(--ink)}
+  .phase{display:flex;align-items:baseline;gap:10px;margin:28px 0 12px}
+  .phase .n{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em}
+  .phase .t{font-family:var(--serif);font-size:19px;color:var(--ink)}
+  .step{display:flex;gap:13px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+    border-radius:11px;padding:13px 16px;margin-bottom:9px}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:0 0 auto;
+    border-radius:50%;border:1px solid var(--accent);color:var(--accent);
+    font-family:var(--mono);font-size:12px;font-weight:500;margin-top:1px}
+  .body{flex:1}
+  .term{font-family:var(--mono);font-weight:500;color:var(--accent);font-size:13.5px}
+  .desc{color:var(--ink);font-size:13.5px;margin-top:4px}
+  .desc .m{color:var(--muted)}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10.5px;color:var(--accent);
+    border:1px solid var(--accent);border-radius:20px;padding:1px 8px;margin-left:8px;vertical-align:1px}
+  .later .num{border-color:var(--line);color:var(--muted)}
+  .later .term{color:var(--muted)}
+  code{font-family:var(--mono);background:var(--faint);border-radius:5px;padding:1px 5px;font-size:12.5px;color:var(--ink)}
+  .foot{color:var(--muted);font-size:11px;margin-top:28px;line-height:1.8;border-top:1px solid var(--line);padding-top:16px}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" fill="none">
+        <line x1="23" y1="24" x2="10" y2="17" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="23" y1="24" x2="37" y2="13" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+        <line x1="23" y1="24" x2="17" y2="38" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="23" y1="24" x2="37" y2="35" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="10" cy="17" r="2.8" fill="var(--ink)"/><circle cx="37" cy="13" r="2.8" fill="var(--ink)"/>
+        <circle cx="17" cy="38" r="2.8" fill="var(--ink)"/><circle cx="37" cy="35" r="2.8" fill="var(--ink)"/>
+        <circle cx="23" cy="24" r="5.6" fill="var(--ink)"/>
+      </svg>
+      <div class="title">plano<span>.</span></div>
+    </div>
+    <button class="theme" id="theme">modo escuro</button>
+  </div>
+  <p class="sub">os passos pra vestir a tela Focus · de dentro pra fora · YAGNI</p>
+
+  <div class="lead">
+    <b>A meta:</b> a Focus vira uma <b>"etiqueta de museu"</b> — respiro, tipografia editorial, o roxo como <b>acento raro</b>.
+    A lógica já funciona; agora é só <b>vestir</b>. Ordem: fundação (carrega 1×) → a tela → o resto (depois).
+  </div>
+
+  <div class="phase"><span class="n">FASE 1</span><span class="t">Fundação · a base compartilhada</span></div>
+
+  <div class="step">
+    <span class="num">1</span>
+    <div class="body">
+      <div class="term">carregar as 2 fontes<span class="chip">▶ começa aqui</span></div>
+      <div class="desc"><b>Fraunces</b> (serif) + <b>IBM Plex Mono</b> (mono), via Google Fonts no <code>index.html</code>. Carrega uma vez → a tela toda herda.
+      <span class="m">Papéis: Fraunces = nomes/títulos/voz · IBM Plex Mono = rótulos/metadados/UI <b>e a logo</b>.</span></div>
+    </div>
+  </div>
+  <div class="step">
+    <span class="num">2</span>
+    <div class="body">
+      <div class="term">paleta "papel" em variáveis CSS</div>
+      <div class="desc">as cores do <code>design.md</code> viram <b>tokens</b>: <code>--canvas</code>, <code>--ink</code>, <code>--muted</code>, <code>--line</code>, <code>--accent</code>…
+      Um lugar só → dá pra trocar tudo (e o <b>modo escuro</b> depois é só um swap). <span class="m">roxo = <code>#6b4e96</code>.</span></div>
+    </div>
+  </div>
+
+  <div class="phase"><span class="n">FASE 2</span><span class="t">A tela Focus · vestir o que já funciona</span></div>
+
+  <div class="step">
+    <span class="num">3</span>
+    <div class="body">
+      <div class="term">esqueleto &amp; respiro</div>
+      <div class="desc">container centralizado, <b>muito espaço em branco</b>, a "etiqueta de museu". <span class="m">Restrição do design: sem sombra, sem gradiente, sem cartão empilhado.</span></div>
+    </div>
+  </div>
+  <div class="step">
+    <span class="num">4</span>
+    <div class="body">
+      <div class="term">nome &amp; descrição (tipografia)</div>
+      <div class="desc">o <b>nome</b> grande em <b>Fraunces</b> (a voz); a descrição no tom de leitura; tipo/rótulos em <b>IBM Plex Mono</b> apagado.</div>
+    </div>
+  </div>
+  <div class="step">
+    <span class="num">5</span>
+    <div class="body">
+      <div class="term">conexões como links</div>
+      <div class="desc">cada conexão = um link editorial ("dirigido por → <b>Nolan</b>"): o rótulo em mono/apagado, o alvo em destaque, <b>hover roxo</b> (o acento reservado). Continua clicável — o <b>focar &amp; pular</b>.</div>
+    </div>
+  </div>
+  <div class="step">
+    <span class="num">6</span>
+    <div class="body">
+      <div class="term">refino</div>
+      <div class="desc">linha fina entre seções, ajuste de espaçamento, e a checagem final: <b>fugir da cara de "template gerado por AI"</b>.</div>
+    </div>
+  </div>
+
+  <div class="phase"><span class="n">FASE 3</span><span class="t">Depois · no mapa, fora do escopo agora</span></div>
+
+  <div class="step later">
+    <span class="num">·</span>
+    <div class="body">
+      <div class="term">modo claro / escuro</div>
+      <div class="desc">o toggle papel↔noite. A fundação (passo 2) já deixa pronto — é só o swap de tokens.</div>
+    </div>
+  </div>
+  <div class="step later">
+    <span class="num">·</span>
+    <div class="body">
+      <div class="term">capa / foto</div>
+      <div class="desc">o slot de imagem ao lado do nome. Espera o <b>modelo de dado da capa</b> (§5 do design).</div>
+    </div>
+  </div>
+  <div class="step later">
+    <span class="num">·</span>
+    <div class="body">
+      <div class="term">conexões nos 2 sentidos</div>
+      <div class="desc">mostrar também quando a entidade é o <b>target</b> (alguém aponta pra ela), não só o source.</div>
+    </div>
+  </div>
+  <div class="step later">
+    <span class="num">·</span>
+    <div class="body">
+      <div class="term">constelação (o grafo)</div>
+      <div class="desc">a tela-vitrine com os nós e arestas. O "caminho A" — adiado (pede lib de layout).</div>
+    </div>
+  </div>
+
+  <p class="foot">
+    <b>regra de ouro:</b> cor = significado · forma/fonte = papel · roxo é acento RARO (conexão forte, hover, o ponto da logo).<br>
+    plano vivo do design · a gente refina conforme constrói.
+  </p>
+</div>
+
+<script>
+  const theme = document.getElementById('theme')
+  theme.addEventListener('click', () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark')
+    theme.textContent = dark ? 'modo escuro' : 'modo claro'
+  })
+</script>
+</body>
+</html>
