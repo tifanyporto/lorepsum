@@ -36,6 +36,26 @@ class EntityUpdate(BaseModel):
     description: str | None = None
     attributes: dict | None = None
 
+class EntityImageCreate(BaseModel):
+    path: str
+    cover: bool = False
+    description: str | None = None
+    entity_id: int
+
+class EntityImageRead(BaseModel):
+    id: int
+    entity_id: int
+    path: str
+    cover: bool
+    description: str | None 
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class EntityImageUpdate(BaseModel):
+    entity_id: int | None = None
+    path: str | None = None
+    cover: bool | None = None
+    description: str | None = None
 
 class RelationshipCreate(BaseModel):
     source_id: int
