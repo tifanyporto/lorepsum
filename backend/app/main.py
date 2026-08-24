@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import get_db
-from app.models import EntityType, Entity, Relationship
-from app.schemas import EntityTypeCreate, EntityTypeRead, EntityTypeUpdate, EntityRead, EntityCreate, EntityUpdate, RelationshipCreate, RelationshipRead, RelationshipUpdate
+from app.models import EntityType, Entity, Relationship, EntityImage
+from app.schemas import EntityTypeCreate, EntityTypeRead, EntityTypeUpdate, EntityRead, EntityCreate, EntityUpdate, EntityImageCreate, EntityImageRead, EntityImageUpdate, RelationshipCreate, RelationshipRead, RelationshipUpdate
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 
@@ -81,7 +81,7 @@ def create_entity(payload: EntityCreate, db=Depends(get_db)):
             db.rollback()
             raise HTTPException(status_code=500, detail="invalid entity_type_id")
         if payload.name is None:
-            b.rollback()
+            db.rollback()
             raise HTTPException(status_code=500, detail="invalid name")
     db.refresh(new_entity)
     return new_entity
@@ -120,6 +120,28 @@ def update_entity(entity_id: int, payload: EntityUpdate, db = Depends(get_db)):
         raise HTTPException(status_code=500, detail="invalid entity_type_id")
     db.refresh(entity)
     return entity
+# -------------------------------------------------------------------------------
+@app.get("/entities/{entity_id}/images", response_model=list[EntityImageRead])
+def list_entity_images(entity_id: int, db = Depends(get_db)):
+    return db.query(EntityImage).filter(EntityImage.entity_id == entity_id).order_by(EntityImage.created_at).all()
+
+@app.post("/entities/{entity_id}/images", response_model=EntityImageRead)
+def create_image(entity_id: int, payload: EntityImageCreate, db=Depends(get_db)):
+    entity = db.get(Entity, entity_id)
+    if entity is None:
+        raise HTTPException(status_code=404, detail="entity not found")
+    new_image = EntityImage(path=payload.path, cover=payload.cover, description=payload.description, entity_id=entity_id)
+    db.add(new_image)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="this entity already has a cover")
+    db.refresh(new_image)
+    return new_image
+
+
+
 # --------------------------------------------------------------------------------
 
 @app.get("/relationships", response_model=list[RelationshipRead])
@@ -163,3 +185,5 @@ def update_relationship(relationship_id: int, payload: RelationshipUpdate, db=De
     db.commit()
     db.refresh(relationship)
     return relationship
+
+    

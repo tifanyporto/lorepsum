@@ -40,7 +40,6 @@ class EntityImageCreate(BaseModel):
     path: str
     cover: bool = False
     description: str | None = None
-    entity_id: int
 
 class EntityImageRead(BaseModel):
     id: int
