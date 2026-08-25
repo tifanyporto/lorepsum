@@ -9,4 +9,4 @@ Mapa da pasta. Comece pelo que precisa:
 | [servidor-no-celular.md](./servidor-no-celular.md) | **Infra** — tutorial de rodar o banco (PostgreSQL) num Android via postmarketOS + Tailscale. |
 
 > Guia de mentoria (como o Claude deve me ensinar) fica na **raiz** do repo: `learning.md`.
-> Handoff de sessão (onde paramos): `CONTINUACAO.md` na raiz.
+> Handoff de sessão (onde paramos, e a trilha do que já foi aprendido): `HANDOFF.md` na raiz.
