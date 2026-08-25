@@ -51,7 +51,6 @@ class EntityImageRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class EntityImageUpdate(BaseModel):
-    entity_id: int | None = None
     path: str | None = None
     cover: bool | None = None
     description: str | None = None

@@ -1,0 +1,51 @@
+from fastapi import APIRouter, Depends, HTTPException
+from app.database import get_db
+from app.models import Relationship
+from app.schemas import RelationshipCreate, RelationshipRead, RelationshipUpdate
+from sqlalchemy.exc import IntegrityError
+
+
+
+router = APIRouter()
+
+@router.get("/relationships", response_model=list[RelationshipRead])
+def list_relationship(db = Depends(get_db)):
+    return db.query(Relationship).all()
+
+@router.post("/relationships", response_model=RelationshipRead)
+def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
+    new_relationship = Relationship(label=payload.label, target_id=payload.target_id, source_id=payload.source_id, weight=payload.weight)
+    db.add(new_relationship)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="invalid link.")
+    db.refresh(new_relationship)
+    return new_relationship
+
+@router.get("/relationships/{relationship_id}", response_model=RelationshipRead)
+def get_relationship(relationship_id: int, db = Depends(get_db)):
+    relationship = db.get(Relationship, relationship_id)
+    if relationship is None:
+        raise HTTPException(status_code=404, detail="relationship not found")
+    return relationship
+
+@router.delete("/relationships/{relationship_id}", status_code=204)
+def delete_relationship(relationship_id: int, db=Depends(get_db)):
+    relationship = db.get(Relationship, relationship_id)
+    if relationship is None:
+        raise HTTPException(status_code=404, detail="relationship not found")
+    db.delete(relationship)
+    db.commit()
+
+@router.patch("/relationships/{relationship_id}", response_model=RelationshipRead)
+def update_relationship(relationship_id: int, payload: RelationshipUpdate, db=Depends(get_db)):
+    relationship = db.get(Relationship, relationship_id)
+    if relationship is None:
+        raise HTTPException(status_code=404, detail="relationship not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(relationship, field, value)
+    db.commit()
+    db.refresh(relationship)
+    return relationship
