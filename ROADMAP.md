@@ -12,31 +12,47 @@
 ## ✅ Feito
 
 - **Backend (núcleo):** modelos `EntityType` · `Entity` · `Relationship` (FK/cascade, weight, constraints) + schemas Pydantic + **CRUD completo**, rodando contra o **servidor soberano** (Postgres no celular via Tailscale).
+- **Backend (organização):** endpoints separados em **routers por recurso** (`app/routers/`).
 - **Frontend (pele de aprendizado):** CRUD de entidades integrado na API (lista / cria / edita / deleta).
-- **Frontend — conexões (núcleo):** criar `relationship` pela UI (2 selects + label, com guard `source≠target` e `Number()` nos ids) + exibir a conexão no card da entidade (dois saltos: entidade → rel → entidade-alvo). **Testado end-to-end.** 🌟
+- **Frontend — conexões (núcleo):** criar `relationship` pela UI + exibir a conexão no card da entidade. **Testado end-to-end.** 🌟
+- **Frontend — tela de FOCO:** o **"focar & pular"** está vivo — entidade no centro, conexões de saída como links que navegam. Vestida no sistema de design (paleta papel, Fraunces + IBM Plex Mono, claro/escuro), responsiva, com componentes extraídos (`ThemeToggle`, `Logo`, `Search`).
+- **Frontend — busca:** filtra entidades por nome e navega no clique.
 - **Infra:** servidor soberano (postmarketOS + Postgres 18 + Tailscale), reboot-proof.
 - **Design:** marca (símbolo, wordmark, paleta, fontes) + **landing** + **fluxo de onboarding conversacional** DEFINIDOS (`docs/design/`).
 
-## 🔨 Agora
+## 🔨 Agora — B2: capa e galeria de imagens
 
-- **Persistir as conexões no load** — o `useEffect` busca `entities` e `types`, mas ainda **não busca `relationships`**; adicionar o `fetch` (gêmeo do de entities) pra elas sobreviverem ao refresh. *(peça pequena e imediata)*
-- **Focar & pular** — navegar por uma conexão: clicar num vizinho e ir pra ele. O **coração** do produto.
+A tabela `entity_image` existe (com **índice único parcial** garantindo no máximo uma capa por entidade), as rotas estão no ar e o **upload funciona**: recebe o arquivo, valida tipo e tamanho, grava em `backend/media/` com nome sorteado (UUID) e cria a linha.
+
+Falta pra fechar:
+
+- **Servir o arquivo** pro navegador (arquivos estáticos) — hoje o arquivo está no disco, mas nenhuma URL o alcança.
+- **Capa no Foco** — buscar as imagens da entidade focada e desenhar a capa no slot ao lado do nome.
+- **Apagar o arquivo junto com a linha** — hoje o `DELETE` remove a linha e deixa a foto órfã no disco.
 
 ## ⏭️ Próximo (fundação que falta)
 
-- **Backend (ponta):** `GET /entities/{id}/relationships` — buscar as conexões de UMA entidade (em vez de todas de uma vez).
-- **Refino de exibição** da conexão no card (formatação "origem —label→ destino", múltiplas conexões por entidade — hoje o `.find` mostra só a primeira).
+- **`GET /entities/{id}/relationships`** — as conexões de UMA entidade (em vez de todas de uma vez). O padrão de endereço já está definido pelo B2: **coleção aninhada, item plano**.
+- **Refino de exibição** das conexões no Foco (formatação "origem —label→ destino", múltiplas conexões).
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
+- **Grafo visual / Constelação** (a antiga "pista B1") — o herói do design: nós e arestas navegáveis, onde a exploração **bidirecional** finalmente vive. Passo grande, provável lib de layout; começar desenhando os nós **estáticos** a partir dos dados.
 - **Home / onboarding em React** — a landing + fluxo conversacional (casca externa). **Design pronto** em `docs/design/`; retomar quando o núcleo tiver **onde deixar** o usuário.
-- **Busca ⌘K** (teleporte pra qualquer entidade).
+- **⌘K na busca** (teleporte por atalho de teclado — a busca em si já existe).
+- **Galeria na tela** — hoje o backend já guarda várias imagens por entidade; falta a tela que mostra mais que a capa.
 - **Onboarding com IA de verdade** (LLM no backend semeia a lore a partir da 1ª resposta) — hoje é simulado no mockup.
 - **Consumo / notas / memórias reificadas** (fase 4).
 - **Descoberta indireta** (caminhos entre entidades — fase 5).
-- **Grafo visual** (a constelação navegável de verdade, com lib de layout — fase 6).
 - **Coleções / timeline** (fase 7).
 - **Auth + "reivindicar a lore" no cadastro + deploy** (fase 9).
+
+## 🔒 Quando houver usuários que eu não conheço
+
+> Guardas que hoje seriam desperdício (o "inimigo" é engano meu, não má-fé alheia), mas que passam a ser obrigatórios no dia do deploy público.
+
+- **Validar imagem pela assinatura do arquivo** (*magic bytes*) — ler os primeiros bytes e conferir o carimbo do formato (`FF D8 FF` = JPEG, `%PDF` = PDF), em vez de confiar no `content_type`, que quem envia **declara** e portanto pode forjar. Lembrar do `seek(0)` depois de espiar, senão o arquivo é gravado sem o próprio cabeçalho. Provavelmente via biblioteca (a `Pillow` **abre** a imagem — se abre, é imagem de verdade, não só um cabeçalho falsificado).
+- **Barrar arquivo grande antes do tráfego** — o 413 de hoje impede que ele seja **gravado**, mas o arquivo já chegou inteiro. Barrar antes é camada de servidor (deploy).
 
 ## 💡 Ideias (brain-dump — sem compromisso, sem ordem)
 
@@ -50,7 +66,8 @@ Jogos Vorazes ↔ Can't Catch Me Now
 Can't Catch Me Now, de Olivia Rodrigo. Motivo: faz parte da trilha sonora de Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes.
 [Conectar] [Dispensar]
 Ao clicar em Conectar, a relação é criada e uma linha passa a conectar visualmente as duas entidades no mapa. Ao clicar em Dispensar, a sugestão é removida.
+
 ---
 
 ### Legenda dos baldes
-`✅ Feito` · `🔨 Agora` (1 coisa por vez) · `⏭️ Próximo` (fundação imediata) · `🌱 Depois` (feature com fundação pronta) · `💡 Ideias` (captura crua).
+`✅ Feito` · `🔨 Agora` (1 coisa por vez) · `⏭️ Próximo` (fundação imediata) · `🌱 Depois` (feature com fundação pronta) · `🔒 Deploy público` (guardas que esperam ter público) · `💡 Ideias` (captura crua).

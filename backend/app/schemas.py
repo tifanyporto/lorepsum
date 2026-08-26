@@ -36,11 +36,6 @@ class EntityUpdate(BaseModel):
     description: str | None = None
     attributes: dict | None = None
 
-class EntityImageCreate(BaseModel):
-    path: str
-    cover: bool = False
-    description: str | None = None
-
 class EntityImageRead(BaseModel):
     id: int
     entity_id: int
