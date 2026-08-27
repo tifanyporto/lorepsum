@@ -12,6 +12,10 @@ router = APIRouter()
 def list_relationship(db = Depends(get_db)):
     return db.query(Relationship).all()
 
+@router.get("/entities/{entity_id}/relationships", response_model=list[RelationshipRead])
+def list_entity_relationships(entity_id: int, db = Depends(get_db)):
+    return db.query(Relationship).filter(Relationship.source_id == entity_id).all()
+
 @router.post("/relationships", response_model=RelationshipRead)
 def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
     new_relationship = Relationship(label=payload.label, target_id=payload.target_id, source_id=payload.source_id, weight=payload.weight)

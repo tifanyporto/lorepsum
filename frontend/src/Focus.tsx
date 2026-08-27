@@ -22,16 +22,16 @@ function Focus(){
         fetch(`${API_URL}/entities`)
         .then(res => res.json())
         .then(data => setEntiies(data))
-        
-        fetch(`${API_URL}/relationships/`)
-        .then(res => res.json())
-        .then(data => setRelationships(data))
     }, [])
 
     useEffect(()=>{
         fetch(`${API_URL}/entities/${focusedId}`)
         .then(res => res.json())
         .then(data => setEntity(data))        
+
+        fetch(`${API_URL}/entities/${focusedId}/relationships`)
+        .then(res => res.json())
+        .then(data => setRelationships(data))
 
         fetch(`${API_URL}/entities/${focusedId}/images`)
         .then(res=> res.json())

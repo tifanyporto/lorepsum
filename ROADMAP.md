@@ -33,13 +33,13 @@ Falta pra fechar o B2:
 
 - **`GET /entities/{id}/relationships`** — as conexões de UMA entidade (em vez de todas de uma vez). O padrão de endereço já está definido pelo B2: **coleção aninhada, item plano**.
 - **Refino de exibição** das conexões no Foco (formatação "origem —label→ destino", múltiplas conexões).
-- **Passada de semântica e acessibilidade no `Focus`** — `<header>`/`<main>`/`<section>` no lugar de `div` genérica, hierarquia de títulos (hoje o `<h2>` do tipo vem antes do `<h1>` do nome, e ele é rótulo, não título), e os links de conexão viram `<button>`: hoje são `<a>` **sem `href`**, que não recebem foco nem respondem ao teclado.
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
 - **Grafo visual / Constelação** (a antiga "pista B1") — o herói do design: nós e arestas navegáveis, onde a exploração **bidirecional** finalmente vive. Passo grande, provável lib de layout; começar desenhando os nós **estáticos** a partir dos dados.
 - **Home / onboarding em React** — a landing + fluxo conversacional (casca externa). **Design pronto** em `docs/design/`; retomar quando o núcleo tiver **onde deixar** o usuário.
 - **⌘K na busca** (teleporte por atalho de teclado — a busca em si já existe).
+- **Passada de semântica e acessibilidade no `Focus`** *(adiada por ela em 2026-08-25 — nada quebra hoje)*: `<header>`/`<main>`/`<section>` no lugar de `div` genérica, hierarquia de títulos (o `<h2>` do tipo vem antes do `<h1>` do nome, e ele é rótulo, não título), e os links de conexão viram `<button>` — hoje são `<a>` **sem `href`**, que não recebem foco nem respondem ao teclado.
 - **Onboarding com IA de verdade** (LLM no backend semeia a lore a partir da 1ª resposta) — hoje é simulado no mockup.
 - **Consumo / notas / memórias reificadas** (fase 4).
 - **Descoberta indireta** (caminhos entre entidades — fase 5).
