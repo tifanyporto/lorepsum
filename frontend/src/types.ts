@@ -28,7 +28,7 @@ type EntityImage = {
     entity_id: number
     path: string
     cover: boolean
-    description: string | null
+    description: string
 }
 
 export type {LogoProps, Entity, Relationship, EntityType, EntityImage}

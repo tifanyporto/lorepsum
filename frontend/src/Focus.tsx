@@ -1,5 +1,5 @@
 import { useState, useEffect} from "react"
-import type {LogoProps, EntityType, Entity, Relationship, EntityImage} from "./types"
+import type {EntityType, Entity, Relationship, EntityImage} from "./types"
 import ThemeToggle from "./components/ThemeToggle"
 import Logo from "./components/Logo"
 import Search from "./components/Search"
@@ -41,7 +41,9 @@ function Focus(){
     const type =  entityTypes.find(t => t.id === entity?.entity_type_id)
     const coverImage = entityImages.find(i => i.cover)
     const coverUrl = `${API_URL}/media/${coverImage?.path}`
-    const conn = relationships.filter( r => r.source_id === entity?.id)
+    const gallery = entityImages.filter(g => !g.cover)
+    const thumbnailGallery = gallery.slice(0, 5)
+    const remainingPhoto = gallery.length - thumbnailGallery.length
     return (
         <div className="min-h-screen bg-canvas">
             <div className="flex items-center justify-between gap-3 p-4">
@@ -63,14 +65,31 @@ function Focus(){
                     </div>
                     </div>
                     <div className="border-t border-line mt-8 pt-6">
-                        <p className="font-mono text-muted text-xs uppercase tracking-wider mb-4">connections</p>
-                    {conn.map((c) =>{
+                        <h3 className="font-mono text-muted text-xs uppercase tracking-wider mb-4">connections</h3>
+                    {relationships.map((c) =>{
                         const tName = entities.find(e=> e.id === c.target_id)?.name
                         return <p className="mt-2 font-mono text-lg text-muted" key={c.id}>{c.label} → 
                         <a onClick={() => setFocusedId(c.target_id)} className="text-ink hover:text-accent cursor-pointer"> {tName}</a>
                         </p>
                      })}
                     </div>
+                    {gallery.length > 0 &&
+                    <div className="border-t border-line mt-8 pt-6 ">
+                        <div className="flex justify-between">
+                            <h3 className="font-mono text-muted text-xs uppercase tracking-wider mb-4">gallery</h3>
+                            <span className="font-mono text-muted text-xs uppercase tracking-wider mb-4">{gallery.length} photos</span>
+                        </div>
+                        <div className="flex gap-2">                       
+                         {thumbnailGallery.map((i) => {
+                            const url = `${API_URL}/media/${i.path}`
+                            return <img key={i.id} src={url} alt={i.description ?? `${entity?.name}`} className="w-14 h-14 object-cover rounded border border-line" />
+                        })}
+                        {remainingPhoto > 0 &&
+                        <div className="w-14 h-14 rounded border border-dashed flex items-center justify-center bg-desk text-muted">
+                        {+{remainingPhoto}}
+                        </div>}
+                        </div>
+                    </div>}
                 </div>
             </div>
     )

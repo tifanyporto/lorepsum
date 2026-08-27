@@ -1,7 +1,7 @@
 # Lorepsum — Direção de Design
 
 > Documento **vivo** — referência das decisões de design da interface. Atualizar conforme a gente refina.
-> Última revisão: 2026-08-18.
+> Última revisão: 2026-08-25.
 
 ---
 
@@ -132,7 +132,7 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 - **Ordem de construção (fork):** **A)** grafo visual como centro desde já (ambicioso, precisa de lib de layout) × **B)** exploração por **links** primeiro (a tela de Foco já entrega o "focar & pular"), e a constelação visual como vitrine depois. **Recomendação: B primeiro** (de dentro pra fora + YAGNI + curva de aprendizado). **NÃO decidido.**
 - **Fluxo de conectar duas entidades** (criar uma aresta pela UI) — a desenhar.
 - **Busca ⌘K** — a detalhar.
-- **Modelo de dados da capa** (atributo direto × satélite de mídia).
+- ~~Modelo de dados da capa~~ — **DECIDIDO (2026-08-24):** tabela satélite `entity_image`, uma só, porque **capa é um papel** (coluna booleana), não um tipo. Upload de arquivo, nome sorteado, caminho relativo no banco.
 - **Posicionamento dos nós:** no app real vem de um **algoritmo de layout** (force-directed) da lib de grafo — não é colocado na mão. O mock estático não representa o espaçamento final.
 - Refinamentos visuais contínuos ("vamos aperfeiçoando").
 
@@ -141,5 +141,26 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 ## 6. Notas de implementação (quando construir)
 
 - Tudo isso é **frontend** (`frontend/`, React + TS + Tailwind). O React que falta (integração com a API, rotas) se aprende **em contexto** ao construir estas telas.
-- A capa/mídia exige decidir upload/armazenamento (pendente).
+- ~~A capa/mídia exige decidir upload/armazenamento~~ — **feito (2026-08-25):** upload multipart com validação de tipo/tamanho, arquivos em `backend/media/` servidos por `StaticFiles`.
 - O grafo visual (caminho A) provavelmente pede uma **lib** (ex.: força-dirigida) — avaliar quando chegar a hora.
+
+---
+
+## Decisão (2026-08-25) — GALERIA: prévia no Foco + galeria maximizada
+
+> Mockup: [`gallery-mockup.html`](./gallery-mockup.html) (abas: Foco com prévia · galeria aberta · celular).
+
+**A prévia (construível hoje).** Depois das conexões, uma seção **`gallery`** com a mesma etiqueta de museu (kicker mono + linha fina em cima) e uma fileira de até **5 miniaturas**, com um `+N` indicando o resto e a contagem total ao lado do kicker.
+
+- **A capa NÃO entra na fileira** — ela já está grande no topo do Foco. A galeria é "o resto".
+
+**A galeria maximizada (espera a Constelação).** Ao clicar numa miniatura, no layout de três painéis:
+
+- a **Constelação colapsa** numa faixa fina à esquerda, mostrando **só o símbolo** — o rótulo do painel some (nada de texto cortado). Clicar na faixa **reabre a Constelação e fecha a galeria**;
+- o **Foco desliza pra esquerda** e encolhe (~1/3), continuando legível: capa, nome, conexões;
+- a **galeria** ocupa o espaço restante, em grade.
+- **O Foco nunca se fecha.** Ele é o centro da tela; o que abre e fecha em volta são a Constelação e a galeria.
+
+**No celular.** Não cabem três painéis: a prévia rola na horizontal, e o toque abre a **galeria em tela cheia** (grade de 2 colunas, com fechar). Nada de depender de arrastar pro lado pra ver uma foto em evidência.
+
+**Ordem de construção.** A prévia não depende de nada e vem primeiro. A camada sobreposta em tela cheia é o comportamento **obrigatório do celular** — então ela também não é provisória, e pode ser construída antes do layout de painéis. O colapso da Constelação só existe quando a Constelação existir.
