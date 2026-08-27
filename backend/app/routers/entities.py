@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.models import Entity
+from app.models import Entity, EntityImage
 from app.schemas import EntityRead, EntityCreate, EntityUpdate
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 router = APIRouter()
@@ -39,13 +40,18 @@ def get_entity(entity_id: int, db = Depends(get_db)):
 @router.delete("/entities/{entity_id}", status_code=204)
 def delete_entity( entity_id: int, hard: bool = False, db=Depends(get_db)):
     entity = db.get(Entity, entity_id)
+    paths = []
     if entity is None:
         raise HTTPException(status_code=404, detail="entity not found")
     if hard:
+        images = db.query(EntityImage).filter(EntityImage.entity_id == entity_id).all()
+        paths = [i.path for i in images]
         db.delete(entity)
     else:
         entity.archived_at = datetime.now(timezone.utc)
     db.commit()
+    for path in paths:
+        Path(f"media/{path}").unlink(missing_ok=True)
     return
 
 @router.patch("/entities/{entity_id}", response_model=EntityRead)
