@@ -22,25 +22,24 @@
 
 ## 🔨 Agora — B2: capa e galeria de imagens
 
-A tabela `entity_image` existe (com **índice único parcial** garantindo no máximo uma capa por entidade), as rotas estão no ar e o **upload funciona**: recebe o arquivo, valida tipo e tamanho, grava em `backend/media/` com nome sorteado (UUID) e cria a linha.
+**A capa está na tela.** ✅ A tabela `entity_image` existe (com **índice único parcial** garantindo no máximo uma capa por entidade); o **upload** recebe o arquivo, valida tipo e tamanho, grava em `backend/media/` com nome sorteado (UUID) e cria a linha; a pasta é **servida** em `/media`; e o **Foco** mostra a capa numa moldura de tamanho fixo — com o símbolo da marca apagado quando a entidade não tem foto.
 
-Falta pra fechar:
+Falta pra fechar o B2:
 
-- **Servir o arquivo** pro navegador (arquivos estáticos) — hoje o arquivo está no disco, mas nenhuma URL o alcança.
-- **Capa no Foco** — buscar as imagens da entidade focada e desenhar a capa no slot ao lado do nome.
 - **Apagar o arquivo junto com a linha** — hoje o `DELETE` remove a linha e deixa a foto órfã no disco.
+- **Galeria na tela** — o backend já guarda N imagens por entidade; o Foco só mostra a capa.
 
 ## ⏭️ Próximo (fundação que falta)
 
 - **`GET /entities/{id}/relationships`** — as conexões de UMA entidade (em vez de todas de uma vez). O padrão de endereço já está definido pelo B2: **coleção aninhada, item plano**.
 - **Refino de exibição** das conexões no Foco (formatação "origem —label→ destino", múltiplas conexões).
+- **Passada de semântica e acessibilidade no `Focus`** — `<header>`/`<main>`/`<section>` no lugar de `div` genérica, hierarquia de títulos (hoje o `<h2>` do tipo vem antes do `<h1>` do nome, e ele é rótulo, não título), e os links de conexão viram `<button>`: hoje são `<a>` **sem `href`**, que não recebem foco nem respondem ao teclado.
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
 - **Grafo visual / Constelação** (a antiga "pista B1") — o herói do design: nós e arestas navegáveis, onde a exploração **bidirecional** finalmente vive. Passo grande, provável lib de layout; começar desenhando os nós **estáticos** a partir dos dados.
 - **Home / onboarding em React** — a landing + fluxo conversacional (casca externa). **Design pronto** em `docs/design/`; retomar quando o núcleo tiver **onde deixar** o usuário.
 - **⌘K na busca** (teleporte por atalho de teclado — a busca em si já existe).
-- **Galeria na tela** — hoje o backend já guarda várias imagens por entidade; falta a tela que mostra mais que a capa.
 - **Onboarding com IA de verdade** (LLM no backend semeia a lore a partir da 1ª resposta) — hoje é simulado no mockup.
 - **Consumo / notas / memórias reificadas** (fase 4).
 - **Descoberta indireta** (caminhos entre entidades — fase 5).

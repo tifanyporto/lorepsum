@@ -1,3 +1,7 @@
+type LogoProps = {
+    className?: string,
+    muted?: boolean
+}
 
 type EntityType = {
   id: number
@@ -19,4 +23,12 @@ type Relationship = {
     label: string
 }
 
-export type {Entity, Relationship, EntityType}
+type EntityImage = {
+    id: number
+    entity_id: number
+    path: string
+    cover: boolean
+    description: string | null
+}
+
+export type {LogoProps, Entity, Relationship, EntityType, EntityImage}

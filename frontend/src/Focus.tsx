@@ -1,8 +1,9 @@
 import { useState, useEffect} from "react"
-import type {EntityType, Entity, Relationship} from "./types"
+import type {LogoProps, EntityType, Entity, Relationship, EntityImage} from "./types"
 import ThemeToggle from "./components/ThemeToggle"
 import Logo from "./components/Logo"
 import Search from "./components/Search"
+import {API_URL} from "./api"
 
 
 function Focus(){
@@ -11,26 +12,35 @@ function Focus(){
     const [entities, setEntiies] = useState<Entity[]>([])
     const [relationships, setRelationships] = useState<Relationship[]>([])
     const [focusedId, setFocusedId] = useState(16)
+    const [entityImages, setEntityImages] = useState<EntityImage[]>([])
 
-    useEffect(()=>{
-        fetch('http://localhost:8000/entity-types')
+    useEffect(()=> {
+        fetch(`${API_URL}/entity-types`)
         .then(res => res.json())
         .then(data => setEntityTypes(data))
 
-        fetch('http://localhost:8000/entities')
+        fetch(`${API_URL}/entities`)
         .then(res => res.json())
         .then(data => setEntiies(data))
-
-        fetch(`http://localhost:8000/entities/${focusedId}`)
-        .then(res => res.json())
-        .then(data => setEntity(data))
         
-        fetch(`http://localhost:8000/relationships/`)
+        fetch(`${API_URL}/relationships/`)
         .then(res => res.json())
-        .then(data => setRelationships(data))        
+        .then(data => setRelationships(data))
+    }, [])
+
+    useEffect(()=>{
+        fetch(`${API_URL}/entities/${focusedId}`)
+        .then(res => res.json())
+        .then(data => setEntity(data))        
+
+        fetch(`${API_URL}/entities/${focusedId}/images`)
+        .then(res=> res.json())
+        .then(data => setEntityImages(data))
         
     }, [focusedId])
     const type =  entityTypes.find(t => t.id === entity?.entity_type_id)
+    const coverImage = entityImages.find(i => i.cover)
+    const coverUrl = `${API_URL}/media/${coverImage?.path}`
     const conn = relationships.filter( r => r.source_id === entity?.id)
     return (
         <div className="min-h-screen bg-canvas">
@@ -40,9 +50,18 @@ function Focus(){
               <ThemeToggle />
             </div>
                 <div className="max-w-xl mx-auto px-6 py-16">
-                    <h2 className="font-mono text-muted text-sm uppercase tracking-wider mb-4">{type?.name}</h2>
-                    <h1 className="font-serif text-4xl text-ink">{entity?.name}</h1>
-                    <p className="text-muted mt-3">{entity?.description}</p>
+                    <div className="flex gap-4 items-start">
+                        <div className="w-32 h-54 mb-4 border border-line rounded bg-desk overflow-hidden flex shrink-0 items-center justify-center">
+                            {coverImage
+                                ? <img className="w-full h-full object-cover" src={coverUrl} alt={coverImage.description ?? `${entity?.name}'s cover photo`}/>
+                                : <Logo muted className="w-12 h-12"/>}
+                        </div>
+                    <div>
+                        <h2 className="font-mono text-muted text-sm uppercase tracking-wider mb-4">{type?.name}</h2>
+                        <h1 className="font-serif text-4xl text-ink">{entity?.name}</h1>
+                        <p className="text-muted mt-3">{entity?.description}</p>
+                    </div>
+                    </div>
                     <div className="border-t border-line mt-8 pt-6">
                         <p className="font-mono text-muted text-xs uppercase tracking-wider mb-4">connections</p>
                     {conn.map((c) =>{
