@@ -85,8 +85,8 @@ function Focus(){
                             return <img key={i.id} src={url} alt={i.description ?? `${entity?.name}`} className="w-14 h-14 object-cover rounded border border-line" />
                         })}
                         {remainingPhoto > 0 &&
-                        <div className="w-14 h-14 rounded border border-dashed flex items-center justify-center bg-desk text-muted">
-                        {+{remainingPhoto}}
+                        <div className="w-14 h-14 rounded border border-dashed border-line flex items-center justify-center bg-desk text-muted">
+                        +{remainingPhoto}
                         </div>}
                         </div>
                     </div>}

@@ -17,17 +17,14 @@
 - **Frontend — conexões (núcleo):** criar `relationship` pela UI + exibir a conexão no card da entidade. **Testado end-to-end.** 🌟
 - **Frontend — tela de FOCO:** o **"focar & pular"** está vivo — entidade no centro, conexões de saída como links que navegam. Vestida no sistema de design (paleta papel, Fraunces + IBM Plex Mono, claro/escuro), responsiva, com componentes extraídos (`ThemeToggle`, `Logo`, `Search`).
 - **Frontend — busca:** filtra entidades por nome e navega no clique.
+- **B2 — imagens (FECHADO 2026-08-25):** tabela `entity_image` com índice único parcial (no máx. 1 capa por entidade) · **upload** multipart com validação de tipo (415) e tamanho (413), nome sorteado (UUID) e arquivos em `backend/media/` · pasta servida por `StaticFiles` · **capa no Foco** com moldura fixa e fallback da marca · **prévia da galeria** (5 miniaturas, contagem e `+N`) · e os dois `DELETE` (imagem e entidade `?hard=true`) **apagando o arquivo do disco** junto com a linha.
+- **Backend:** `GET /entities/{id}/relationships` — o Foco não baixa mais o grafo inteiro pra mostrar 3 conexões.
 - **Infra:** servidor soberano (postmarketOS + Postgres 18 + Tailscale), reboot-proof.
 - **Design:** marca (símbolo, wordmark, paleta, fontes) + **landing** + **fluxo de onboarding conversacional** DEFINIDOS (`docs/design/`).
 
-## 🔨 Agora — B2: capa e galeria de imagens
+## 🔨 Agora — *a definir*
 
-**A capa está na tela.** ✅ A tabela `entity_image` existe (com **índice único parcial** garantindo no máximo uma capa por entidade); o **upload** recebe o arquivo, valida tipo e tamanho, grava em `backend/media/` com nome sorteado (UUID) e cria a linha; a pasta é **servida** em `/media`; e o **Foco** mostra a capa numa moldura de tamanho fixo — com o símbolo da marca apagado quando a entidade não tem foto.
-
-Falta pra fechar o B2:
-
-- **Apagar o arquivo junto com a linha** — hoje o `DELETE` remove a linha e deixa a foto órfã no disco.
-- **Galeria na tela** — o backend já guarda N imagens por entidade; o Foco só mostra a capa.
+O B2 fechou. Candidatos, em ordem de peso: **Constelação (o grafo)** · **galeria maximizada** (a camada em tela cheia, já desenhada no mockup) · **refino de exibição das conexões**.
 
 ## ⏭️ Próximo (fundação que falta)
 
