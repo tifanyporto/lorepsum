@@ -22,6 +22,7 @@ def list_entity_images(entity_id: int, db = Depends(get_db)):
 def upload_image(entity_id: int, file: UploadFile = File(...), cover: bool = Form(False), description: str | None = Form(None),  db=Depends(get_db)):
     
     entity = db.get(Entity, entity_id)
+
     if entity is None:
         raise HTTPException(status_code=404, detail="entity not found")
     
@@ -34,8 +35,6 @@ def upload_image(entity_id: int, file: UploadFile = File(...), cover: bool = For
     extension = Path(file.filename).suffix
     path = f"{entity_id}-{uuid4().hex}{extension}"
     
-
-
     new_image = EntityImage(
         path=path, 
         cover=cover, 
@@ -59,11 +58,17 @@ def upload_image(entity_id: int, file: UploadFile = File(...), cover: bool = For
 
 @router.delete("/entity-images/{image_id}", status_code=204)
 def delete_images(image_id: int, db = Depends(get_db)):
+
     image = db.get(EntityImage, image_id)
+
     if image is None: 
         raise HTTPException(status_code=404, detail="image not found")
+    
+    path = image.path
+
     db.delete(image)
     db.commit()
+    Path(f"media/{path}").unlink(missing_ok=True)
     return
 
 @router.patch("/entity-images/{image_id}", response_model=EntityImageRead)
