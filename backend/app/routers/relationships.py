@@ -24,6 +24,9 @@ def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
         db.commit()
     except IntegrityError:
         db.rollback()
+    if payload.weight <= 0:
+        raise HTTPException(status_code=409, detail="weight must have a value.")
+    if payload.target_id == payload.source_id:
         raise HTTPException(status_code=409, detail="invalid link.")
     db.refresh(new_relationship)
     return new_relationship

@@ -5,6 +5,11 @@ import Logo from "./components/Logo"
 import Search from "./components/Search"
 import {API_URL} from "./api"
 
+const CONSTELLATION_BOX_SIZE = 400
+const CONSTELLATION_CENTER = CONSTELLATION_BOX_SIZE / 2
+const CONSTELLATION_RADIUS = 140
+
+
 
 function Focus(){
     const [entityTypes, setEntityTypes] = useState<EntityType[]>([])
@@ -44,6 +49,7 @@ function Focus(){
     const gallery = entityImages.filter(g => !g.cover)
     const thumbnailGallery = gallery.slice(0, 5)
     const remainingPhoto = gallery.length - thumbnailGallery.length
+    const step = 2 * Math.PI / relationships.length 
     return (
         <div className="min-h-screen bg-canvas">
             <div className="flex items-center justify-between gap-3 p-4">
@@ -52,6 +58,16 @@ function Focus(){
               <ThemeToggle />
             </div>
                 <div className="max-w-xl mx-auto px-6 py-16">
+                    <div className="border border-line rounded relative" style={{width: CONSTELLATION_BOX_SIZE, height: CONSTELLATION_BOX_SIZE}}>                       
+                        <div className="absolute w-8 h-8 bg-ink rounded -translate-x-1/2 -translate-y-1/2" style={{left: CONSTELLATION_CENTER, top: CONSTELLATION_CENTER}}>
+
+                        </div>
+                        {relationships.map((r, i) =>{
+                            const angle = i * step
+                            return <div className="absolute w-8 h-8 rounded -translate-x-1/2 -translate-y-1/2 bg-desk border border-line" style={{top: CONSTELLATION_CENTER + Math.sin(angle) * CONSTELLATION_RADIUS, left: CONSTELLATION_CENTER + Math.cos(angle) * CONSTELLATION_RADIUS}} key={r.id}></div>
+                        })}
+
+                    </div>
                     <div className="flex gap-4 items-start">
                         <div className="w-32 h-54 mb-4 border border-line rounded bg-desk overflow-hidden flex shrink-0 items-center justify-center">
                             {coverImage
@@ -82,10 +98,10 @@ function Focus(){
                         <div className="flex gap-2">                       
                          {thumbnailGallery.map((i) => {
                             const url = `${API_URL}/media/${i.path}`
-                            return <img key={i.id} src={url} alt={i.description ?? `${entity?.name}`} className="w-14 h-14 object-cover rounded border border-line" />
+                            return <img key={i.id} src={url} alt={i.description ?? `${entity?.name}`} className="w-20 h-20 object-cover rounded border border-line" />
                         })}
                         {remainingPhoto > 0 &&
-                        <div className="w-14 h-14 rounded border border-dashed border-line flex items-center justify-center bg-desk text-muted">
+                        <div className="w-20 h-20 rounded border border-dashed border-line flex items-center justify-center bg-desk text-muted">
                         +{remainingPhoto}
                         </div>}
                         </div>

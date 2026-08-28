@@ -28,8 +28,8 @@ O B2 fechou. Candidatos, em ordem de peso: **Constelação (o grafo)** · **gale
 
 ## ⏭️ Próximo (fundação que falta)
 
-- **`GET /entities/{id}/relationships`** — as conexões de UMA entidade (em vez de todas de uma vez). O padrão de endereço já está definido pelo B2: **coleção aninhada, item plano**.
 - **Refino de exibição** das conexões no Foco (formatação "origem —label→ destino", múltiplas conexões).
+- **Validação de `weight` na borda (Pydantic) + erros mais honestos no `create_relationship`** — hoje `weight: 0` viola o CHECK do banco e vira **409 "invalid link."**, a mesma mensagem usada pra FK inválida, `source == target` e duplicada. A faixa 1–3 devia ser recusada pelo schema (**422**, apontando o campo), e o 409 ficar só pro caso de conflito de verdade.
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
