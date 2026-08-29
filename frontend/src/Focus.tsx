@@ -50,6 +50,14 @@ function Focus(){
     const thumbnailGallery = gallery.slice(0, 5)
     const remainingPhoto = gallery.length - thumbnailGallery.length
     const step = 2 * Math.PI / relationships.length 
+    const connections = relationships.map((r, i) => {
+        const angle = i * step
+        return {
+            id: r.id, 
+            x: CONSTELLATION_CENTER + Math.cos(angle) * CONSTELLATION_RADIUS, 
+            y: CONSTELLATION_CENTER + Math.sin(angle) * CONSTELLATION_RADIUS
+        }
+    })
     return (
         <div className="min-h-screen bg-canvas">
             <div className="flex items-center justify-between gap-3 p-4">
@@ -58,13 +66,17 @@ function Focus(){
               <ThemeToggle />
             </div>
                 <div className="max-w-xl mx-auto px-6 py-16">
-                    <div className="border border-line rounded relative" style={{width: CONSTELLATION_BOX_SIZE, height: CONSTELLATION_BOX_SIZE}}>                       
+                    <div className="border border-line rounded relative" style={{width: CONSTELLATION_BOX_SIZE, height: CONSTELLATION_BOX_SIZE}}>             
+                        <svg className="absolute top-0 left-0" width={CONSTELLATION_BOX_SIZE} height={CONSTELLATION_BOX_SIZE}>
+                            {connections.map((c)=>{                                
+                                return <line x1={CONSTELLATION_CENTER} y1={CONSTELLATION_CENTER} x2={c.x} y2={c.y} stroke="var(--color-line)" key={c.id}/>
+                            })}
+                        </svg>          
                         <div className="absolute w-8 h-8 bg-ink rounded -translate-x-1/2 -translate-y-1/2" style={{left: CONSTELLATION_CENTER, top: CONSTELLATION_CENTER}}>
-
+                        
                         </div>
-                        {relationships.map((r, i) =>{
-                            const angle = i * step
-                            return <div className="absolute w-8 h-8 rounded -translate-x-1/2 -translate-y-1/2 bg-desk border border-line" style={{top: CONSTELLATION_CENTER + Math.sin(angle) * CONSTELLATION_RADIUS, left: CONSTELLATION_CENTER + Math.cos(angle) * CONSTELLATION_RADIUS}} key={r.id}></div>
+                        {connections.map((c) =>{
+                            return <div className="absolute w-8 h-8 rounded -translate-x-1/2 -translate-y-1/2 bg-desk border border-line" style={{top: c.y, left: c.x}} key={c.id}></div>
                         })}
 
                     </div>
