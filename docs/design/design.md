@@ -1,7 +1,7 @@
 # Lorepsum — Direção de Design
 
 > Documento **vivo** — referência das decisões de design da interface. Atualizar conforme a gente refina.
-> Última revisão: 2026-08-25.
+> Última revisão: 2026-08-26.
 
 ---
 
@@ -164,3 +164,27 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 **No celular.** Não cabem três painéis: a prévia rola na horizontal, e o toque abre a **galeria em tela cheia** (grade de 2 colunas, com fechar). Nada de depender de arrastar pro lado pra ver uma foto em evidência.
 
 **Ordem de construção.** A prévia não depende de nada e vem primeiro. A camada sobreposta em tela cheia é o comportamento **obrigatório do celular** — então ela também não é provisória, e pode ser construída antes do layout de painéis. O colapso da Constelação só existe quando a Constelação existir.
+
+---
+
+## Decisão (2026-08-26) — CONSTELAÇÃO: bolinhas, magnitude e o roxo do foco
+
+> Mockup interativo: [`constellation-mockup.html`](./constellation-mockup.html) — arrastar, zoom, e clicar num nó refaz o desenho em volta dele.
+
+**Os nós são bolinhas.** Nada de moldura com ícone por tipo — *essa ideia sai do grafo* e fica guardada pra outro lugar da interface. Aqui a hierarquia é carregada por **magnitude**: o tamanho e a opacidade caem conforme a distância (foco 9px · anel 1 6px/90% · anel 2 4,5px/45% · anel 3 3,2px/22%). O resultado lê como céu, não como diagrama.
+
+**Só o foco pulsa.** É a mesma bolinha da home — núcleo sólido roxo com dois anéis expandindo (2,6s, o segundo atrasado em 1,3s). Sendo **o único movimento da tela**, ela puxa o olho sem precisar ser maior nem colorida.
+
+**Roxo = o foco e o que encosta nele.** As arestas que saem do nó focado são roxas (55%); as dos anéis 2 e 3 são tinta esmaecida (16% e 9%). A cor deixa de ser enfeite e vira **fronteira**: o que é seu × o que é contexto.
+*(Revisão da regra antiga "roxo reservado, só hover": reservado demais fez o primário sumir da tela. A regra nova mantém a economia — três usos: foco, vizinhança direta, hover.)*
+
+**Hover** pinta a bolinha de roxo, revela o nome e **acende as arestas daquele nó** — distinguindo-se do anel 1 (que já é roxo) por **peso**: opacidade cheia e traço mais grosso.
+
+**Rótulo segue a hierarquia:** nome fixo no foco e no anel 1; nos anéis 2 e 3, só no hover.
+
+**Três anéis**, e a janela é **interativa**: arrastar (mouse e dedo), zoom (roda e pinça), clicar em qualquer nó — inclusive apagado — refoca.
+
+### O que isso cobra
+
+- **Backend:** a API devolve as conexões de *uma* entidade. Três anéis pedem a vizinhança por **profundidade** — endpoint novo, ou cascata de requisições no front.
+- **Layout:** o mockup distribui por **setores** (cada nó divide sua fatia de ângulo entre os filhos), o que impede sobreposição mas trata o grafo como **árvore**. Os cruzamentos (Arkham vizinha de Gotham *e* do Coringa) são desenhados, mas a posição vem do primeiro caminho. **É aqui que o force-directed passa a se pagar** — e não antes.

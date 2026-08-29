@@ -22,9 +22,15 @@
 - **Infra:** servidor soberano (postmarketOS + Postgres 18 + Tailscale), reboot-proof.
 - **Design:** marca (símbolo, wordmark, paleta, fontes) + **landing** + **fluxo de onboarding conversacional** DEFINIDOS (`docs/design/`).
 
-## 🔨 Agora — *a definir*
+## 🔨 Agora — Constelação (o grafo)
 
-O B2 fechou. Candidatos, em ordem de peso: **Constelação (o grafo)** · **galeria maximizada** (a camada em tela cheia, já desenhada no mockup) · **refino de exibição das conexões**.
+**Já no app:** nó focado no centro, vizinhos distribuídos num círculo (geometria própria, sem lib), arestas em SVG, e clicar num vizinho refoca — tudo a partir dos dados, sem posição guardada em banco.
+
+**Desenho aprovado** em [`docs/design/constellation-mockup.html`](docs/design/constellation-mockup.html) (decisões em `design.md`, bloco 2026-08-26). Falta, em ordem de dependência:
+
+1. **Vestir o que existe** — bolinhas com magnitude por distância, o pulso da home no nó focado, arestas do foco em roxo, nome no anel 1, hover. *Não depende de nada novo.*
+2. **Janela interativa** — arrastar e zoom (mouse e toque). *Não depende de backend.*
+3. **Anéis 2 e 3** — exige um endpoint de **vizinhança por profundidade** e um layout por setores. É aqui que a decisão sobre **force-directed** volta à mesa.
 
 ## ⏭️ Próximo (fundação que falta)
 

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorepsum — constelação (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --desk:#e6dfce; --canvas:#f6f2e9; --ink:#26231d; --muted:#8a8072;
+    --line:#d7cebc; --accent:#6b4e96; --card:#fffdf8;
+    --serif:'Fraunces',Georgia,serif; --mono:'IBM Plex Mono',monospace;
+  }
+  :root[data-theme="dark"]{
+    --desk:#080706; --canvas:#0e0d0c; --ink:#ece7dd; --muted:#8b857a;
+    --line:#332f29; --accent:#ad8bd4; --card:#141210;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--desk);color:var(--ink);font-family:var(--mono);
+       -webkit-font-smoothing:antialiased;padding:26px 18px 50px;line-height:1.5}
+  .wrap{max-width:1060px;margin:0 auto}
+
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  h1{font-family:var(--serif);font-size:27px;font-weight:400}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:12px;max-width:64ch;margin:6px 0 16px}
+  .btn{background:var(--canvas);border:1px solid var(--line);color:var(--muted);border-radius:8px;
+       padding:7px 11px;cursor:pointer;font-family:var(--mono);font-size:12px}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .stagewrap{position:relative;background:var(--canvas);border:1px solid var(--line);border-radius:14px;
+             overflow:hidden;height:560px;touch-action:none}
+  svg#stage{width:100%;height:100%;display:block;cursor:grab}
+  svg#stage.dragging{cursor:grabbing}
+
+  .tools{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px}
+  .tools .btn{background:var(--card);width:34px;height:34px;padding:0;font-size:15px;line-height:1}
+  .legend{position:absolute;left:14px;top:12px;font-size:10px;letter-spacing:.16em;
+          text-transform:uppercase;color:var(--muted)}
+  .hint{position:absolute;left:14px;bottom:12px;font-size:10.5px;color:var(--muted);opacity:.85}
+
+  /* ---------- arestas ---------- */
+  .edge{stroke:var(--ink);fill:none;transition:stroke .18s, opacity .18s, stroke-width .18s}
+  .edge.d1{stroke:var(--accent);stroke-width:1.3;opacity:.55}
+  .edge.d2{stroke-width:1;opacity:.16}
+  .edge.d3{stroke-width:1;opacity:.09}
+  .edge.hot{stroke:var(--accent);opacity:.9;stroke-width:1.6}
+
+  /* ---------- nós: estrelas de magnitudes ---------- */
+  .node{cursor:pointer}
+  .dot{fill:var(--ink);transition:fill .18s}
+  .node.d1 .dot{opacity:.9}
+  .node.d2 .dot{opacity:.45}
+  .node.d3 .dot{opacity:.22}
+  .node:hover .dot{fill:var(--accent);opacity:1}
+
+  /* o foco: a bolinha da home, pulsando */
+  .core{fill:var(--accent)}
+  .pulse{fill:none;stroke:var(--accent);stroke-width:1.4;
+         transform-box:fill-box;transform-origin:center;
+         animation:pulse 2.6s cubic-bezier(.2,.6,.3,1) infinite}
+  .pulse.b{animation-delay:1.3s}
+  @keyframes pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(4.2);opacity:0}}
+
+  .label{font-family:var(--mono);font-size:10.5px;fill:var(--muted);text-anchor:middle;pointer-events:none}
+  .label.strong{fill:var(--ink)}
+  .label.hidden{opacity:0;transition:opacity .14s}
+  .label.hidden.show{opacity:1}
+
+  .notes{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+  .note{background:var(--canvas);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+  .note h3{font-family:var(--serif);font-size:14.5px;font-weight:400;margin-bottom:5px}
+  .note p{font-size:11.5px;color:var(--muted)}
+  .note b{color:var(--ink);font-weight:400}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <h1>constelação<span>.</span></h1>
+    <button class="btn" id="theme">modo escuro</button>
+  </div>
+  <p class="sub">Arraste pra mover · role o mouse (ou pinça) pra dar zoom · clique num nó pra refocar. Só a entidade em destaque pulsa; o resto são estrelas de magnitudes diferentes, conforme a distância.</p>
+
+  <div class="stagewrap" id="stagewrap">
+    <span class="legend" id="legend">foco: Batman</span>
+    <svg id="stage"></svg>
+    <div class="tools">
+      <button class="btn" id="zin">+</button>
+      <button class="btn" id="zout">−</button>
+      <button class="btn" id="reset" title="recentrar">⌖</button>
+    </div>
+    <span class="hint">arraste · zoom · clique</span>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3>A bolinha da home, aqui</h3>
+      <p>Mesmo núcleo sólido e os mesmos dois anéis expandindo (2,6s, o segundo atrasado). <b>Só o nó em destaque pulsa</b> — é o único movimento da tela. E o roxo se espalha por onde ele toca: <b>as arestas que saem dele</b> também são roxas, então a vizinhança direta se lê de relance.</p>
+    </div>
+    <div class="note">
+      <h3>Magnitude no lugar de ícone</h3>
+      <p>Distância vira <b>tamanho e opacidade</b>: anel 1 firme, anel 2 menor e mais apagado, anel 3 quase poeira. Sem cor e sem símbolo — a hierarquia carrega tudo.</p>
+    </div>
+    <div class="note">
+      <h3>O nome segue a hierarquia</h3>
+      <p>Fixo no foco e no anel 1; nos demais, só no hover — que também acende as arestas daquele nó em roxo.</p>
+    </div>
+    <div class="note">
+      <h3>O que falta pro app</h3>
+      <p>A API devolve as conexões de <b>uma</b> entidade; três anéis pedem a vizinhança por <b>profundidade</b>. E o layout por setores trata o grafo como árvore — os cruzamentos são onde o <b>force-directed</b> se paga.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------- dados
+const NODES = {
+  batman:'Batman', robin:'Robin', alfred:'Alfred', coringa:'Coringa', gordon:'Gordon',
+  gotham:'Gotham', bkane:'Bob Kane', tdk:'O Cavaleiro das Trevas', nolan:'Nolan',
+  batcaverna:'Batcaverna', arkham:'Arkham', zimmer:'Hans Zimmer', inception:'A Origem',
+  ledger:'Heath Ledger', noite94:'noite de 1994', bruce:'Bruce Wayne', batmovel:'Batmóvel',
+  piada:'Piada Mortal', vinganca:'vingança', detective:'Detective Comics',
+}
+const EDGES = [
+  ['batman','robin'],['batman','alfred'],['batman','coringa'],['batman','gotham'],['batman','bkane'],
+  ['robin','gotham'],['robin','noite94'],
+  ['alfred','batcaverna'],['alfred','bruce'],
+  ['coringa','arkham'],['coringa','ledger'],['coringa','piada'],
+  ['gotham','gordon'],['gotham','arkham'],
+  ['bkane','detective'],
+  ['ledger','tdk'],['tdk','nolan'],['tdk','zimmer'],
+  ['nolan','inception'],['zimmer','inception'],
+  ['bruce','vinganca'],['bruce','batmovel'],
+  ['arkham','vinganca'],
+]
+const RADIUS = [0, 140, 265, 370]
+const DOT    = [9, 6, 4.5, 3.2]
+const MAX_DEPTH = 3
+
+const adj = {}
+Object.keys(NODES).forEach(k => adj[k] = [])
+EDGES.forEach(([a,b]) => { adj[a].push(b); adj[b].push(a) })
+
+// ------------------------------------------------------------- layout
+function layout(focus){
+  const depth = {[focus]:0}, parent = {}, order = [focus]
+  for (let i = 0; i < order.length; i++){
+    const cur = order[i]
+    if (depth[cur] >= MAX_DEPTH) continue
+    adj[cur].forEach(nb => {
+      if (depth[nb] === undefined){ depth[nb] = depth[cur]+1; parent[nb] = cur; order.push(nb) }
+    })
+  }
+  const kids = {}
+  order.forEach(k => kids[k] = [])
+  order.forEach(k => { if (parent[k]) kids[parent[k]].push(k) })
+
+  const pos = {}
+  function place(id, a0, a1){
+    const mid = (a0 + a1) / 2, r = RADIUS[depth[id]]
+    pos[id] = { x: Math.cos(mid)*r, y: Math.sin(mid)*r, depth: depth[id] }
+    const cs = kids[id]
+    if (!cs.length) return
+    const pad = (a1 - a0) * 0.06
+    const span = (a1 - a0 - pad*2) / cs.length
+    cs.forEach((c, i) => place(c, a0 + pad + span*i, a0 + pad + span*(i+1)))
+  }
+  place(focus, 0, Math.PI*2)
+
+  const edges = []
+  EDGES.forEach(([a,b]) => {
+    if (pos[a] && pos[b]) edges.push({ a, b, depth: Math.max(pos[a].depth, pos[b].depth) })
+  })
+  return { pos, edges }
+}
+
+// ------------------------------------------------------------- render
+const SVGNS = 'http://www.w3.org/2000/svg'
+const stage = document.getElementById('stage')
+const legend = document.getElementById('legend')
+let focus = 'batman'
+let view = { x:0, y:0, k:1 }
+let root
+
+const el = (tag, attrs) => {
+  const n = document.createElementNS(SVGNS, tag)
+  for (const k in attrs) n.setAttribute(k, attrs[k])
+  return n
+}
+
+function draw(){
+  stage.innerHTML = ''
+  root = el('g', {})
+  stage.appendChild(root)
+
+  const { pos, edges } = layout(focus)
+  const gEdges = el('g', {}), gNodes = el('g', {})
+  root.appendChild(gEdges); root.appendChild(gNodes)
+
+  edges.forEach(e => {
+    const l = el('line', {
+      x1: pos[e.a].x, y1: pos[e.a].y, x2: pos[e.b].x, y2: pos[e.b].y,
+      class: 'edge d' + Math.max(1, e.depth)
+    })
+    l.dataset.a = e.a; l.dataset.b = e.b
+    gEdges.appendChild(l)
+  })
+
+  Object.keys(pos).forEach(id => {
+    const p = pos[id], r = DOT[p.depth]
+    const g = el('g', { class:'node d'+p.depth, transform:`translate(${p.x},${p.y})` })
+
+    if (p.depth === 0){
+      g.appendChild(el('circle', { r, class:'pulse' }))
+      g.appendChild(el('circle', { r, class:'pulse b' }))
+      g.appendChild(el('circle', { r, class:'core' }))
+    } else {
+      g.appendChild(el('circle', { r, class:'dot' }))
+    }
+
+    g.addEventListener('click', ev => {
+      ev.stopPropagation()
+      if (id !== focus){ focus = id; view = { x:0, y:0, k:view.k }; draw() }
+    })
+    g.addEventListener('pointerenter', () => highlight(id, true))
+    g.addEventListener('pointerleave', () => highlight(id, false))
+    gNodes.appendChild(g)
+
+    const always = p.depth <= 1
+    const lab = el('text', {
+      x: p.x, y: p.y + r + 15,
+      class: 'label' + (always ? ' strong' : ' hidden')
+    })
+    lab.textContent = NODES[id].length > 20 ? NODES[id].slice(0,19)+'…' : NODES[id]
+    lab.dataset.for = id
+    gNodes.appendChild(lab)
+  })
+
+  legend.textContent = 'foco: ' + NODES[focus]
+  apply()
+}
+
+function highlight(id, on){
+  root.querySelectorAll('.edge').forEach(l => {
+    if (l.dataset.a === id || l.dataset.b === id) l.classList.toggle('hot', on)
+  })
+  const lab = root.querySelector(`.label[data-for="${id}"]`)
+  if (lab) lab.classList.toggle('show', on)
+}
+
+function apply(){
+  const r = stage.getBoundingClientRect()
+  root.setAttribute('transform',
+    `translate(${r.width/2 + view.x},${r.height/2 + view.y}) scale(${view.k})`)
+}
+
+// ------------------------------------------------------------ interação
+let drag = null
+stage.addEventListener('pointerdown', e => {
+  drag = { x:e.clientX, y:e.clientY, ox:view.x, oy:view.y }
+  stage.setPointerCapture(e.pointerId); stage.classList.add('dragging')
+})
+stage.addEventListener('pointermove', e => {
+  if (!drag) return
+  view.x = drag.ox + (e.clientX - drag.x)
+  view.y = drag.oy + (e.clientY - drag.y)
+  apply()
+})
+stage.addEventListener('pointerup', () => { drag = null; stage.classList.remove('dragging') })
+stage.addEventListener('wheel', e => {
+  e.preventDefault()
+  view.k = Math.min(2.6, Math.max(0.35, view.k * (e.deltaY < 0 ? 1.12 : 1/1.12)))
+  apply()
+}, { passive:false })
+
+document.getElementById('zin').onclick   = () => { view.k = Math.min(2.6, view.k*1.2); apply() }
+document.getElementById('zout').onclick  = () => { view.k = Math.max(0.35, view.k/1.2); apply() }
+document.getElementById('reset').onclick = () => { view = {x:0,y:0,k:1}; apply() }
+window.addEventListener('resize', apply)
+
+const theme = document.getElementById('theme')
+theme.onclick = () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark'
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark')
+  theme.textContent = dark ? 'modo escuro' : 'modo claro'
+}
+
+draw()
+</script>
+</body>
+</html>
