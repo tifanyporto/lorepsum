@@ -55,7 +55,8 @@ function Focus(){
         return {
             id: r.id, 
             x: CONSTELLATION_CENTER + Math.cos(angle) * CONSTELLATION_RADIUS, 
-            y: CONSTELLATION_CENTER + Math.sin(angle) * CONSTELLATION_RADIUS
+            y: CONSTELLATION_CENTER + Math.sin(angle) * CONSTELLATION_RADIUS,
+            target: r.target_id
         }
     })
     return (
@@ -76,7 +77,10 @@ function Focus(){
                         
                         </div>
                         {connections.map((c) =>{
-                            return <div className="absolute w-8 h-8 rounded -translate-x-1/2 -translate-y-1/2 bg-desk border border-line" style={{top: c.y, left: c.x}} key={c.id}></div>
+                            return <div className="absolute w-8 h-8 rounded -translate-x-1/2 -translate-y-1/2 bg-desk border border-line cursor-pointer" onClick={() => setFocusedId(c.target)} key={c.id} style={{top: c.y, left: c.x}}>                               
+                            </div>
+                            
+
                         })}
 
                     </div>
