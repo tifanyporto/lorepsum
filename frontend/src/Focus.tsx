@@ -4,6 +4,17 @@ import ThemeToggle from "./components/ThemeToggle";
 import Logo from "./components/Logo";
 import Search from "./components/Search";
 import { API_URL } from "./api";
+import {
+  forceSimulation,
+  forceManyBody,
+  forceLink,
+  forceCenter,
+  type SimulationNodeDatum,
+  type SimulationLinkDatum,
+} from "d3-force";
+
+type GraphNode = SimulationNodeDatum & { id: number; name: string };
+type GraphLink = SimulationLinkDatum<GraphNode>;
 
 const CONSTELLATION_BOX_SIZE = 400;
 const CONSTELLATION_CENTER = CONSTELLATION_BOX_SIZE / 2;
@@ -26,6 +37,8 @@ function Focus() {
     panX: number;
     panY: number;
   } | null>(null);
+  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
+  const [graphLinks, setGraphLinks] = useState<GraphLink[]>([]);
 
   useEffect(() => {
     fetch(`${API_URL}/entity-types`)
@@ -51,27 +64,45 @@ function Focus() {
       .then((data) => setEntityImages(data));
   }, [focusedId]);
   useEffect(() => {
-    // o <svg> de verdade, o que o React desenhou na página
+    // o <svg>
     const el = svgRef.current;
-    // na primeiríssima passada ele ainda não existe
     if (el === null) return;
-
-    // o que fazer quando a roda girar sobre o SVG
+    // o que fazer quando a roda do mouse girar sobre o SVG
     const handleWheel = (e: WheelEvent) => {
-      // cancela a rolagem da página — só funciona porque o ouvinte não é passivo
+      // cancela a rolagem da página, só funciona porque o ouvinte não é passivo
       e.preventDefault();
       // pra cima aproxima, pra baixo afasta; preso entre 0.4 e 2.5
       setZoom(
         Math.min(2.5, Math.max(0.4, e.deltaY < 0 ? zoom * 1.1 : zoom / 1.1)),
       );
     };
-
     // registra na mão, avisando que este ouvinte PODE cancelar o evento
     el.addEventListener("wheel", handleWheel, { passive: false });
-
     // limpeza: tira este ouvinte antes de registrar o próximo
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoom]);
+
+  useEffect(() => {
+    const nodes: GraphNode[] = entities.map((e) => {
+      return { id: e.id, name: e.name };
+    });
+    const links: GraphLink[] = relationships.map((r) => {
+      return { source: r.source_id, target: r.target_id };
+    });
+
+    const simulation = forceSimulation(nodes)
+      .force("charge", forceManyBody())
+      .force(
+        "link",
+        forceLink<GraphNode, GraphLink>(links).id((n) => n.id),
+      )
+      .force("center", forceCenter(0, 0));
+    simulation.stop();
+    simulation.tick(300);
+    setGraphNodes(nodes);
+    setGraphLinks(links);
+  }, [entities, relationships]);
+
   const type = entityTypes.find((t) => t.id === entity?.entity_type_id);
   const coverImage = entityImages.find((i) => i.cover);
   const coverUrl = `${API_URL}/media/${coverImage?.path}`;

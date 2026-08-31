@@ -188,3 +188,34 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 
 - **Backend:** a API devolve as conexões de *uma* entidade. Três anéis pedem a vizinhança por **profundidade** — endpoint novo, ou cascata de requisições no front.
 - **Layout:** o mockup distribui por **setores** (cada nó divide sua fatia de ângulo entre os filhos), o que impede sobreposição mas trata o grafo como **árvore**. Os cruzamentos (Arkham vizinha de Gotham *e* do Coringa) são desenhados, mas a posição vem do primeiro caminho. **É aqui que o force-directed passa a se pagar** — e não antes.
+
+---
+
+## Decisão (2026-08-26, parte 2) — OS DOIS MODOS e o papel do pulso
+
+> Mockup: [`constellation-modes-mockup.html`](./constellation-modes-mockup.html) — alterna os modos e testa os dois comportamentos de clique.
+
+**A Constelação tem dois modos, e eles são do mesmo painel — não são duas telas.**
+
+| modo | o que desenha | quando busca |
+|---|---|---|
+| **vizinhança** | a região em volta do foco, limitada por profundidade | a cada troca de foco |
+| **tudo** | o cofre inteiro | uma vez, ao abrir |
+
+**Clicar num nó nunca abre janela.** Constelação e Foco convivem lado a lado, então o clique no mapa **troca o conteúdo do painel do Foco** — o mesmo movimento de clicar numa conexão da lista, só que pelo desenho.
+
+**No modo "tudo", o mapa fica quieto.** Clicar seleciona sem refazer o desenho: quem está explorando o cofre não pode perder o enquadramento que construiu arrastando. Recentrar vira **ação explícita** (um "centrar aqui"). No modo "vizinhança" o clique sempre recentra — é o que a vizinhança significa.
+
+**O pulso é o cursor.** Ele marca **a entidade que o Foco está mostrando**, nunca o centro do desenho. Nos dois modos isso coincide em vizinhança, mas se separa em "tudo" — e ter dois sinais de "você está aqui" (pulso num nó, anel em outro) confunde. O nó em foco também é o maior, independente do anel em que caiu.
+
+**Rótulo da aresta no hover.** Passar o mouse sobre uma aresta mostra o `label` da relação. É o único lugar onde o texto livre da conexão aparece no grafo.
+
+### Consequência pro backend — nenhuma, por enquanto (revisto em 2026-08-26)
+
+A primeira versão desta decisão previa um endpoint `GET /entities/{id}/neighborhood?depth=`. **Descartado por ora**, e o motivo é bom de guardar:
+
+> Os dois modos precisam **dos mesmos dados** — todas as entidades e todas as relações — que os endpoints `GET /entities` e `GET /relationships` **já entregam**. O que separa "vizinhança" de "tudo" não é o que se busca: é **até onde se desenha**.
+
+Então a profundidade vira **decisão de desenho**, calculada no front a partir do grafo que ele já tem em memória. Os dois modos passam a ser **um número** (desenhe até 3 anéis × desenhe todos), não dois caminhos de dados.
+
+O endpoint de vizinhança continua sendo a saída certa **quando o acervo crescer** — aí ele evita baixar milhares de linhas pra mostrar 25. É otimização pra quando doer, no mesmo balde dos *magic bytes* e da coluna `position`.

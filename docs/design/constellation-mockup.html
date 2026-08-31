@@ -224,6 +224,7 @@ function draw(){
 
     g.addEventListener('click', ev => {
       ev.stopPropagation()
+      if (moved) return
       if (id !== focus){ focus = id; view = { x:0, y:0, k:view.k }; draw() }
     })
     g.addEventListener('pointerenter', () => highlight(id, true))
@@ -259,13 +260,14 @@ function apply(){
 }
 
 // ------------------------------------------------------------ interação
-let drag = null
+let drag = null, moved = false
 stage.addEventListener('pointerdown', e => {
   drag = { x:e.clientX, y:e.clientY, ox:view.x, oy:view.y }
-  stage.setPointerCapture(e.pointerId); stage.classList.add('dragging')
+  moved = false; stage.classList.add('dragging')
 })
 stage.addEventListener('pointermove', e => {
   if (!drag) return
+  if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 3) moved = true
   view.x = drag.ox + (e.clientX - drag.x)
   view.y = drag.oy + (e.clientY - drag.y)
   apply()
