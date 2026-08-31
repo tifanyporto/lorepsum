@@ -1,30 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-desk:   #e6dfce;   /* mesa — fundo externo */
-  --color-canvas: #f6f2e9;   /* tela */
-  --color-ink:    #26231d;   /* tinta — texto */
-  --color-muted:  #8a8072;   /* apagado */
-  --color-line:   #d7cebc;   /* linha fina */
-  --color-accent: #6b4e96;   /* roxo — ameixa */
+  --color-desk: #e6dfce; /* mesa — fundo externo */
+  --color-canvas: #f6f2e9; /* tela */
+  --color-ink: #26231d; /* tinta — texto */
+  --color-muted: #8a8072; /* apagado */
+  --color-line: #d7cebc; /* linha fina */
+  --color-accent: #6b4e96; /* roxo — ameixa */
 
-  --font-serif: 'Fraunces', Georgia, serif;
-  --font-mono:  'IBM Plex Mono', monospace;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-mono: "IBM Plex Mono", monospace;
   --animate-fade-in: fade-in 0.18s ease-out;
 }
 
 :root[data-theme="dark"] {
-  --color-desk:   #080706;
+  --color-desk: #080706;
   --color-canvas: #0e0d0c;
-  --color-ink:    #ece7dd;
-  --color-muted:  #8b857a;
-  --color-line:   #332f29;
+  --color-ink: #ece7dd;
+  --color-muted: #8b857a;
+  --color-line: #332f29;
   --color-accent: #ad8bd4;
 }
 
+.pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse-ring 2.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
 
+@keyframes pulse-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
