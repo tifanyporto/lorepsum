@@ -24,13 +24,12 @@
 
 ## 🔨 Agora — Constelação (o grafo)
 
-**Já no app:** nó focado no centro, vizinhos distribuídos num círculo (geometria própria, sem lib), arestas em SVG, e clicar num vizinho refoca — tudo a partir dos dados, sem posição guardada em banco.
+**Desenho aprovado** em [`docs/design/constellation-mockup.html`](docs/design/constellation-mockup.html) (decisões em `design.md`, bloco 2026-08-26).
 
-**Desenho aprovado** em [`docs/design/constellation-mockup.html`](docs/design/constellation-mockup.html) (decisões em `design.md`, bloco 2026-08-26). Falta, em ordem de dependência:
-
-1. **Vestir o que existe** — bolinhas com magnitude por distância, o pulso da home no nó focado, arestas do foco em roxo, nome no anel 1, hover. *Não depende de nada novo.*
-2. **Janela interativa** — arrastar e zoom (mouse e toque). *Não depende de backend.*
-3. **Anéis 2 e 3** — exige um endpoint de **vizinhança por profundidade** e um layout por setores. É aqui que a decisão sobre **force-directed** volta à mesa.
+- ✅ **Passo 1 — o desenho.** Tudo em SVG dentro do `Focus.tsx`: nó focado no centro com o **pulso da home**, vizinhos em bolinhas menores distribuídas num círculo (geometria própria, sem lib), arestas roxas suaves, **nome** no anel 1 (do lado de fora, nunca sobre a aresta), **hover** acendendo bolinha e aresta, e clique refocando.
+- ✅ **Passo 2 — janela interativa.** Arrastar (com `onPointer*`, então já funciona no toque) e **zoom** (roda do mouse, travado entre 0,4 e 2,5). O zoom precisou de `useRef` + `addEventListener(..., { passive: false })` pra poder cancelar a rolagem da página — o `onWheel` do React é passivo e não deixa.
+- ⬜ **Passo 3 — anéis 2 e 3.** Exige um endpoint de **vizinhança por profundidade** no backend e um layout por setores. É aqui que a decisão sobre **force-directed** volta à mesa.
+- ⬜ **Passo 4 — layout.** Constelação e Foco lado a lado (hoje a caixa fica acima do card, provisoriamente).
 
 ## ⏭️ Próximo (fundação que falta)
 
