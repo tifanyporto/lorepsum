@@ -219,3 +219,23 @@ A primeira versão desta decisão previa um endpoint `GET /entities/{id}/neighbo
 Então a profundidade vira **decisão de desenho**, calculada no front a partir do grafo que ele já tem em memória. Os dois modos passam a ser **um número** (desenhe até 3 anéis × desenhe todos), não dois caminhos de dados.
 
 O endpoint de vizinhança continua sendo a saída certa **quando o acervo crescer** — aí ele evita baixar milhares de linhas pra mostrar 25. É otimização pra quando doer, no mesmo balde dos *magic bytes* e da coluna `position`.
+
+---
+
+## Decisão (2026-09-01) — O GRAFO INTEIRO, e a câmera que viaja
+
+**A Constelação desenha tudo, e desenha uma vez só.** As arestas vêm de `GET /relationships` (todas), buscadas junto com as entidades na abertura da tela. A simulação de forças roda **uma vez** e as posições nunca mais mudam: o grafo deixa de ser um desenho que se refaz e vira **um lugar**. É isso que torna o resto possível — o enquadramento que você constrói arrastando sobrevive ao clique.
+
+**Some o modo "vizinhança", e some a profundidade junto.** Não existem mais anéis 2 e 3: existe o grafo, e a hierarquia é carregada por **quem está aceso**. O foco é maior (9px) e pulsa; quem encosta nele fica opaco e com nome; o resto fica em 40% de tinta, com as arestas em 12%. Ninguém é escondido — a navegação (arrastar e zoom) é que resolve o tamanho do acervo, conforme a decisão de 26/08.
+
+**Clicar num nó recentra, e a câmera viaja até ele.** *Revisão da decisão de 26/08 parte 2*, que previa clique **sem** recentrar no modo "tudo", com um "centrar aqui" explícito. O medo era perder o enquadramento — mas ele nascia de um grafo que se rearranjava a cada clique. Com o layout fixo, recentrar não desorienta: o mapa é o mesmo, só a janela andou, e o movimento contínuo mostra **de onde pra onde** você pulou. O "focar & pular" ganha o pulo.
+
+**Duas transições, e a segunda tem interruptor.** Cor, opacidade e tamanho dos nós e arestas amaciam em 300ms — é o que faz a troca de foco parar de piscar. A câmera desliza em 500ms com `ease-out` (chegada, não freada). A da câmera é **desligada durante o arrasto**: como cada movimento do mouse define um `pan` novo, o mapa ficaria meio segundo atrás do cursor.
+
+### O que isso resolveu (e o que cobrou)
+
+O bug que revelou tudo isso: clicar num nó afastado o mandava pra fora da tela. A conta da câmera estava certa — o chão é que se mexia. O state `relationships` (só as do foco, vindas de `/entities/{id}/relationships`) estava fazendo **dois trabalhos**: alimentar a lista *connections* e alimentar o desenho. Como ele estava nas dependências do efeito da simulação, cada troca de foco redistribuía o grafo inteiro. Um state, um trabalho: nasceu o `allRelationships`.
+
+- **Layout por setores: cancelado.** O `forceLink`/`forceManyBody` já resolve cruzamentos sem tratar o grafo como árvore.
+- **Rótulo de aresta no hover** (decidido em 26/08) continua **não feito**.
+- O endpoint de vizinhança segue no balde "quando o acervo crescer" — com uma razão a mais: agora o desenho **depende** de ter o grafo todo em memória.

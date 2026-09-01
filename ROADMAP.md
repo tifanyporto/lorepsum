@@ -28,7 +28,7 @@
 
 - ✅ **Passo 1 — o desenho.** Tudo em SVG dentro do `Focus.tsx`: nó focado no centro com o **pulso da home**, vizinhos em bolinhas menores distribuídas num círculo (geometria própria, sem lib), arestas roxas suaves, **nome** no anel 1 (do lado de fora, nunca sobre a aresta), **hover** acendendo bolinha e aresta, e clique refocando.
 - ✅ **Passo 2 — janela interativa.** Arrastar (com `onPointer*`, então já funciona no toque) e **zoom** (roda do mouse, travado entre 0,4 e 2,5). O zoom precisou de `useRef` + `addEventListener(..., { passive: false })` pra poder cancelar a rolagem da página — o `onWheel` do React é passivo e não deixa.
-- ⬜ **Passo 3 — anéis 2 e 3.** **Sem backend novo:** o front busca `/entities` e `/relationships` uma vez e calcula a **distância de cada entidade até o foco**; a profundidade vira decisão de desenho (3 anéis × todos). Depois, o layout por setores — e é aqui que a decisão sobre **force-directed** volta à mesa.
+- ✅ **Passo 3 — o grafo inteiro** *(2026-09-01, decisões em `design.md`)*. O front busca `/entities` e `/relationships` **uma vez** e entrega tudo pro **d3-force** (`forceManyBody(-300)` + `forceLink(90)` + `forceCenter`), rodado de uma vez só com `stop()` + `tick(300)`. Os anéis morreram junto com a profundidade: desenha-se tudo, e a hierarquia é **foco · vizinhos · resto**. Clicar recentra a câmera com deslize, e as trocas de cor/tamanho amaciam com `transition`.
 - ⬜ **Passo 4 — layout.** Constelação e Foco lado a lado (hoje a caixa fica acima do card, provisoriamente).
 
 ## ⏭️ Próximo (fundação que falta)
@@ -38,11 +38,10 @@
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
-- **Grafo visual / Constelação** (a antiga "pista B1") — o herói do design: nós e arestas navegáveis, onde a exploração **bidirecional** finalmente vive. Passo grande, provável lib de layout; começar desenhando os nós **estáticos** a partir dos dados.
-- **Modo "tudo" da Constelação** — o cofre inteiro no mesmo painel, com o clique **sem recentrar** e um "centrar aqui" explícito. Não precisa de endpoint: é o mesmo dado, sem o limite de anéis. Decisões em `design.md` (bloco 2026-08-26 parte 2).
+- **Rótulo da aresta no hover** — mostrar o `label` da relação ao passar o mouse sobre a linha. Decidido em `design.md` (2026-08-26 parte 2), único lugar do grafo onde o texto livre da conexão aparece.
+- **Botão de recentrar** ("voltar pro foco") — hoje, depois de arrastar longe, só clicando num nó ou recarregando.
 - **Home / onboarding em React** — a landing + fluxo conversacional (casca externa). **Design pronto** em `docs/design/`; retomar quando o núcleo tiver **onde deixar** o usuário.
 - **⌘K na busca** (teleporte por atalho de teclado — a busca em si já existe).
-- **Tela do grafo inteiro (`GET /graph`)** — a constelação do acervo todo, carregada **uma vez**, pra passear com arrastar e zoom. É irmã da vizinhança, não substituta: a vizinhança busca **a cada troca de foco** e por isso é limitada por profundidade; o grafo inteiro busca **uma vez** e por isso pode ser grande. Mesmo componente de desenho, fonte de dados diferente. *(Distinção equivalente à do Obsidian: local graph × graph view.)*
 - **Passada de semântica e acessibilidade no `Focus`** *(adiada por ela em 2026-08-25 — nada quebra hoje)*: `<header>`/`<main>`/`<section>` no lugar de `div` genérica, hierarquia de títulos (o `<h2>` do tipo vem antes do `<h1>` do nome, e ele é rótulo, não título), e os links de conexão viram `<button>` — hoje são `<a>` **sem `href`**, que não recebem foco nem respondem ao teclado.
 - **Onboarding com IA de verdade** (LLM no backend semeia a lore a partir da 1ª resposta) — hoje é simulado no mockup.
 - **Consumo / notas / memórias reificadas** (fase 4).

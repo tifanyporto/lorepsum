@@ -15,16 +15,17 @@ import {
 
 type GraphNode = SimulationNodeDatum & { id: number; name: string };
 type GraphLink = SimulationLinkDatum<GraphNode>;
+type PositionedLink = { source: GraphNode; target: GraphNode };
 
 const CONSTELLATION_BOX_SIZE = 400;
 const CONSTELLATION_CENTER = CONSTELLATION_BOX_SIZE / 2;
-const CONSTELLATION_RADIUS = 140;
 
 function Focus() {
   const [entityTypes, setEntityTypes] = useState<EntityType[]>([]);
   const [entity, setEntity] = useState<Entity>();
   const [entities, setEntiies] = useState<Entity[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
+  const [allRelationships, setAllRelationships] = useState<Relationship[]>([]);
   const [focusedId, setFocusedId] = useState(16);
   const [entityImages, setEntityImages] = useState<EntityImage[]>([]);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
@@ -38,7 +39,7 @@ function Focus() {
     panY: number;
   } | null>(null);
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
-  const [graphLinks, setGraphLinks] = useState<GraphLink[]>([]);
+  const [graphLinks, setGraphLinks] = useState<PositionedLink[]>([]);
 
   useEffect(() => {
     fetch(`${API_URL}/entity-types`)
@@ -48,6 +49,10 @@ function Focus() {
     fetch(`${API_URL}/entities`)
       .then((res) => res.json())
       .then((data) => setEntiies(data));
+
+    fetch(`${API_URL}/relationships`)
+      .then((res) => res.json())
+      .then((data) => setAllRelationships(data));
   }, []);
 
   useEffect(() => {
@@ -86,22 +91,24 @@ function Focus() {
     const nodes: GraphNode[] = entities.map((e) => {
       return { id: e.id, name: e.name };
     });
-    const links: GraphLink[] = relationships.map((r) => {
+    const links: GraphLink[] = allRelationships.map((r) => {
       return { source: r.source_id, target: r.target_id };
     });
 
     const simulation = forceSimulation(nodes)
-      .force("charge", forceManyBody())
+      .force("charge", forceManyBody().strength(-300))
       .force(
         "link",
-        forceLink<GraphNode, GraphLink>(links).id((n) => n.id),
+        forceLink<GraphNode, GraphLink>(links)
+          .id((n) => n.id)
+          .distance(90),
       )
       .force("center", forceCenter(0, 0));
     simulation.stop();
     simulation.tick(300);
     setGraphNodes(nodes);
-    setGraphLinks(links);
-  }, [entities, relationships]);
+    setGraphLinks(links as unknown as PositionedLink[]);
+  }, [entities, allRelationships]);
 
   const type = entityTypes.find((t) => t.id === entity?.entity_type_id);
   const coverImage = entityImages.find((i) => i.cover);
@@ -109,17 +116,11 @@ function Focus() {
   const gallery = entityImages.filter((g) => !g.cover);
   const thumbnailGallery = gallery.slice(0, 5);
   const remainingPhoto = gallery.length - thumbnailGallery.length;
-  const step = (2 * Math.PI) / relationships.length;
-  const connections = relationships.map((r, i) => {
-    const angle = i * step;
-    const entityName = entities.find((e) => e.id === r.target_id)?.name;
-    return {
-      id: r.id,
-      x: Math.cos(angle) * CONSTELLATION_RADIUS,
-      y: Math.sin(angle) * CONSTELLATION_RADIUS,
-      target: r.target_id,
-      entity_name: entityName,
-    };
+  // quem encosta na entidade em foco — decide quem mostra o nome sem hover
+  const neighborIds = new Set<number>();
+  graphLinks.forEach((l) => {
+    if (l.source.id === focusedId) neighborIds.add(l.target.id);
+    if (l.target.id === focusedId) neighborIds.add(l.source.id);
   });
   return (
     <div className="min-h-screen bg-canvas">
@@ -161,69 +162,105 @@ function Focus() {
           >
             <g
               transform={`translate(${CONSTELLATION_CENTER + pan.x}, ${CONSTELLATION_CENTER + pan.y}) scale(${zoom})`}
+              className={
+                dragStart ? "" : "transition-transform duration-500 ease-out"
+              }
             >
-              {connections.map((c) => {
+              {graphLinks.map((l) => {
+                const touchesFocus =
+                  l.source.id === focusedId || l.target.id === focusedId;
+                const touchesHover =
+                  l.source.id === hoveredId || l.target.id === hoveredId;
                 return (
                   <line
-                    x1={0}
-                    y1={0}
-                    x2={c.x}
-                    y2={c.y}
-                    stroke="var(--color-accent)"
-                    key={c.id}
-                    strokeOpacity={hoveredId === c.id ? 0.9 : 0.55}
-                    strokeWidth={hoveredId === c.id ? 1.6 : 1.3}
+                    x1={l.source.x}
+                    y1={l.source.y}
+                    x2={l.target.x}
+                    y2={l.target.y}
+                    stroke={
+                      touchesFocus ? "var(--color-accent)" : "var(--color-ink)"
+                    }
+                    strokeOpacity={
+                      touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.12
+                    }
+                    strokeWidth={touchesHover ? 1.6 : 1.3}
+                    key={`${l.source.id}-${l.target.id}`}
+                    className="transition-all duration-300"
                   />
                 );
               })}
-              <circle
-                cx={0}
-                cy={0}
-                r={9}
-                fill="none"
-                stroke="var(--color-accent)"
-                strokeWidth={1.4}
-                className="pulse-ring"
-              ></circle>
-              <circle
-                cx={0}
-                cy={0}
-                r={9}
-                fill="none"
-                stroke="var(--color-accent)"
-                className="pulse-ring"
-                strokeWidth={1.4}
-                style={{ animationDelay: "1.3s" }}
-              ></circle>
-              <circle cx={0} cy={0} r={9} fill="var(--color-accent)"></circle>
-              {connections.map((c) => {
+              {graphNodes.map((n) => {
+                const isFocused = n.id === focusedId;
+                const isNeighbor = neighborIds.has(n.id);
+                const isHovered = n.id === hoveredId;
+                const showName = isFocused || isNeighbor || isHovered;
+                const r = isFocused ? 9 : 6;
                 return (
                   <g
-                    key={c.id}
-                    onMouseEnter={() => setHoveredId(c.id)}
+                    key={n.id}
+                    onMouseEnter={() => setHoveredId(n.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
+                    {isFocused && (
+                      <>
+                        <circle
+                          cx={n.x}
+                          cy={n.y}
+                          r={r}
+                          fill="none"
+                          stroke="var(--color-accent)"
+                          strokeWidth={1.4}
+                          className="pulse-ring"
+                        />
+                        <circle
+                          cx={n.x}
+                          cy={n.y}
+                          r={r}
+                          fill="none"
+                          stroke="var(--color-accent)"
+                          strokeWidth={1.4}
+                          className="pulse-ring"
+                          style={{ animationDelay: "1.3s" }}
+                        />
+                      </>
+                    )}
                     <circle
-                      cx={c.x}
-                      cy={c.y}
-                      r={6}
+                      cx={n.x}
+                      cy={n.y}
+                      r={r}
                       fill={
-                        hoveredId === c.id
+                        isFocused || isHovered
                           ? "var(--color-accent)"
                           : "var(--color-ink)"
                       }
-                      className="cursor-pointer"
-                      onClick={() => setFocusedId(c.target)}
-                    ></circle>
-                    <text
-                      x={c.x}
-                      y={c.y < 0 ? c.y - 15 : c.y + 20}
-                      textAnchor="middle"
-                      fill="var(--color-ink)"
-                      fontSize={11}
-                    >
-                      {c.entity_name}
-                    </text>
+                      fillOpacity={
+                        isFocused || isNeighbor || isHovered ? 1 : 0.4
+                      }
+                      className="transition-all duration-300 cursor-pointer"
+                      onClick={() => {
+                        setFocusedId(n.id);
+                        setPan({
+                          x: -(n.x ?? 0) * zoom,
+                          y: -(n.y ?? 0) * zoom,
+                        });
+                      }}
+                    />
+                    {showName && (
+                      <text
+                        x={n.x}
+                        y={(n.y ?? 0) + r + 14}
+                        textAnchor="middle"
+                        fill={
+                          isFocused ? "var(--color-ink)" : "var(--color-muted)"
+                        }
+                        fontSize={11}
+                        stroke="var(--color-canvas)"
+                        strokeWidth={3}
+                        paintOrder="stroke"
+                      >
+                        {n.name}
+                      </text>
+                    )}
                   </g>
                 );
               })}
