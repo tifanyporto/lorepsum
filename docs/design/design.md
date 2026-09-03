@@ -239,3 +239,53 @@ O bug que revelou tudo isso: clicar num nó afastado o mandava pra fora da tela.
 - **Layout por setores: cancelado.** O `forceLink`/`forceManyBody` já resolve cruzamentos sem tratar o grafo como árvore.
 - **Rótulo de aresta no hover** (decidido em 26/08) continua **não feito**.
 - O endpoint de vizinhança segue no balde "quando o acervo crescer" — com uma razão a mais: agora o desenho **depende** de ter o grafo todo em memória.
+
+---
+
+## Decisão (2026-09-02) — O PAINEL DE LEITURA: dois painéis, e conexões agrupadas por tipo
+
+> Mockup: [`connections-mockup.html`](./connections-mockup.html) — três rondas de alternativas, com botão de estresse (4 tipos × 7 tipos, 20 conexões).
+
+**Constelação e Foco lado a lado, e a página não rola.** A página tem a altura da tela; a linha dos dois painéis toma o que sobra da topbar e é a **coluna do Foco** que rola por dentro. O teto de largura era da coluna de leitura, nunca da página — então ele desceu pra ela, e a linha ganhou um teto folgado (1600px).
+
+**A largura extra vai pro grafo, não pro texto.** O painel do Foco tem largura fixa de leitura (`basis-[420px]`, não cresce); a Constelação fica com o resto. Num monitor largo cresce quem se beneficia — texto corrido com 700px de largura é ilegível, grafo com 700px é melhor. *(Revisão do 58/42 do mockup da constelação, que fazia os dois crescerem juntos.)*
+
+**Respiro em vez de tela cheia.** A linha tem teto de altura (640px) e margem automática, então os painéis ficam centrados na vertical com ar em volta. A Constelação é um **objeto na página**, não um plano de fundo.
+
+### O painel de leitura, refeito
+
+**Duas famílias, dois papéis.** Serifa é **conteúdo** — nome da entidade, descrição, e o nome de cada conexão. Mono é **etiqueta** — rótulos de seção, tipos, contagens e o `label` da relação. A hierarquia passa a vir da *letra*, não de empilhar tamanhos de fonte, que era o que cansava a vista.
+
+**A conexão é uma linha de duas colunas:** o `label` em mono, alinhado **à direita** de uma coluna fixa; o nome em serifa, começando sempre no mesmo x. O olho desce por uma margem só, em vez de ler frases que começam diferente. A seta `→` saiu — a coluna faz o trabalho dela.
+
+**As conexões são agrupadas pelo tipo da entidade de destino**, e cada grupo **começa fechado**. A ficha abre como um **índice** — `characters 13 · movies 4 · places 5 · objects 4` — e cabe inteira sem rolagem, galeria incluída: você vê a forma do acervo daquela entidade antes de ler um nome. Clicar num tipo abre só ele (vários podem ficar abertos); um `expand all` no canto abre todos e vira `collapse all`.
+
+*(Descartado: pastilhas de filtro. Elas duplicavam o nome do tipo — no filtro e no rótulo — e viravam poluição com 7 tipos. O rótulo do grupo já era o filtro.)*
+
+**Roxo continua reservado.** Grupo aberto fica em **tinta**, não em roxo, pra não diluir o que o roxo já significa (foco e hover). E a barra de rolagem do painel é fina e roxa.
+
+---
+
+## Decisão (2026-09-02) — A ENTIDADE DESCREVE A SI MESMA
+
+Descoberto olhando o acervo: a descrição de `Fear` dizia *"The weapon **he** chose…"*. Esse "he" não tem antecedente na tela — só existia na cabeça de quem escreveu a ficha do Batman. Chegando pelo Sinestro ou pelo Scarecrow, a frase fala de um sujeito ausente.
+
+> **A entidade descreve a si mesma. A relação descreve o vínculo.**
+>
+> Teste: se a descrição deixa de fazer sentido quando você chega por outro vizinho, ela está no lugar errado.
+
+Isso pesa mais nos `Concept` do que em qualquer outro tipo, porque conceito é justamente o que **muita gente compartilha** — é o `Fear` que costura Batman, Scarecrow e Sinestro, que nunca se encontraram. Conceito com dono deixa de ser conceito e vira anotação.
+
+Não vale para quando a posse **é** a coisa: `LexCorp` é a empresa do Lex, `Apokolips` é o mundo do Darkseid, o `Lasso of Truth` é o laço da Diana. Aí o dono é propriedade do objeto, não ponto de vista.
+
+### A saída (dela): descrição na aresta
+
+A forma como o Batman lida com o medo **é** diferente da do Sinestro — e isso não é defeito da descrição genérica, é informação que hoje não tem onde morar. O lugar dela é a **aresta**: uma coluna de texto em `relationship`, ao lado do `label` curto. A entidade guarda a descrição genérica; a aresta guarda a contextual; a tela escolhe com `descrição da aresta ?? descrição da entidade`.
+
+Pra isso o front precisa saber **por onde se entrou** — um state novo, `número | null`, com a aresta atravessada. E aí a verificação que fecha o desenho:
+
+- a **busca** não atravessa aresta (teletransporte);
+- a **constelação** também não — clica-se num nó, não numa linha, mesmo quando o nó é vizinho;
+- só a lista `connections` atravessa, e sempre no sentido **saída** (o Foco só mostra conexões de saída, decisão de 2026-08-21).
+
+Logo, **uma coluna basta**: o sentido contrário não é alcançável hoje. O problema dos dois textos (ida × volta) volta no dia em que o Foco mostrar conexões de **entrada**, ou no dia em que a aresta da constelação virar clicável. Guardado com o gatilho anotado, não ignorado.

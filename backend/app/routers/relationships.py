@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.models import Relationship
+from app.models import Relationship, Entity
 from app.schemas import RelationshipCreate, RelationshipRead, RelationshipUpdate
 from sqlalchemy.exc import IntegrityError
 
@@ -10,11 +10,13 @@ router = APIRouter()
 
 @router.get("/relationships", response_model=list[RelationshipRead])
 def list_relationship(db = Depends(get_db)):
-    return db.query(Relationship).all()
-
+    alive_ids = db.query(Entity.id).filter(Entity.archived_at.is_(None))
+    return db.query(Relationship).filter(Relationship.source_id.in_(alive_ids), Relationship.target_id.in_(alive_ids)).all()
+    
 @router.get("/entities/{entity_id}/relationships", response_model=list[RelationshipRead])
 def list_entity_relationships(entity_id: int, db = Depends(get_db)):
-    return db.query(Relationship).filter(Relationship.source_id == entity_id).all()
+    alive_ids = db.query(Entity.id).filter(Entity.archived_at.is_(None))
+    return db.query(Relationship).filter(Relationship.source_id == entity_id, Relationship.target_id.in_(alive_ids)).all()
 
 @router.post("/relationships", response_model=RelationshipRead)
 def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):

@@ -49,3 +49,22 @@
     transform: translateY(0);
   }
 }
+
+/* barra de rolagem fina, no roxo */
+.scrollbar-accent {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent) transparent;
+}
+
+.scrollbar-accent::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-accent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-accent::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 999px;
+}

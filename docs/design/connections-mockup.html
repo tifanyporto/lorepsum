@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorepsum — conexões agrupadas por tipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --desk:#e6dfce; --canvas:#f6f2e9; --ink:#26231d; --muted:#8a8072;
+    --line:#d7cebc; --accent:#6b4e96;
+    --serif:'Fraunces',Georgia,serif; --mono:'IBM Plex Mono',monospace;
+  }
+  :root[data-theme="dark"]{
+    --desk:#080706; --canvas:#0e0d0c; --ink:#ece7dd; --muted:#8b857a;
+    --line:#332f29; --accent:#ad8bd4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--desk);color:var(--ink);font-family:var(--mono);
+       -webkit-font-smoothing:antialiased;padding:24px 18px 60px;line-height:1.5}
+  .wrap{max-width:1300px;margin:0 auto}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+  h1{font-family:var(--serif);font-size:26px;font-weight:400}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);font-size:12px;max-width:78ch;margin:6px 0 22px}
+  .btn{background:var(--canvas);border:1px solid var(--line);color:var(--muted);border-radius:8px;
+       padding:6px 11px;cursor:pointer;font-family:var(--mono);font-size:11.5px}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .cols{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .col{flex:1 1 340px;min-width:320px}
+  .colhead{font-size:11px;color:var(--muted);margin-bottom:9px;letter-spacing:.04em}
+  .colhead b{color:var(--ink);font-weight:400}
+
+  /* ---- o painel de leitura, nas medidas do app ---- */
+  .pane{background:var(--canvas);border:1px solid var(--line);border-radius:12px;
+        padding:28px 24px;height:560px;overflow:auto}
+  .fhead{display:flex;gap:16px;align-items:flex-start}
+  .cover{width:96px;height:96px;flex:0 0 auto;border:1px solid var(--line);border-radius:4px;
+         background:var(--desk);display:flex;align-items:center;justify-content:center}
+  .cover svg{width:28px;height:28px;opacity:.55}
+  .etype{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .ename{font-family:var(--serif);font-size:26px;font-weight:400;line-height:1.15}
+  .edesc{color:var(--muted);font-size:14px;margin-top:8px}
+
+  .sect{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}
+  .skick{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .conn{font-size:12.5px;color:var(--muted);margin-bottom:6px;cursor:pointer}
+  .conn b{color:var(--ink);font-weight:400}
+  .conn:hover b{color:var(--accent)}
+
+  /* A — subgrupos dentro de connections */
+  .grp{margin-bottom:16px}
+  .grp:last-child{margin-bottom:0}
+  .gkick{font-size:10.5px;color:var(--muted);opacity:.75;margin-bottom:5px;
+         display:flex;align-items:center;gap:7px}
+  .gkick::after{content:"";flex:1;height:1px;background:var(--line)}
+  .grp .conn{padding-left:10px}
+
+  /* C — filtros */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+  .chip{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+        border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;background:transparent;
+        font-family:var(--mono)}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.on{border-color:var(--accent);color:var(--accent)}
+  .chip .n{opacity:.6;margin-left:5px}
+
+  .note{background:var(--canvas);border:1px solid var(--line);border-radius:10px;
+        padding:12px 14px;margin-top:11px;font-size:11.5px;color:var(--muted)}
+  .note b{color:var(--ink);font-weight:400}
+  .note .good{color:var(--accent)}
+
+  /* ================= ronda 3 — a geral ================= */
+  .r3row{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .r3col{flex:0 1 auto}
+  .r3col .cap{font-size:10.5px;color:var(--muted);margin-bottom:9px}
+
+  .card{background:var(--canvas);border:1px solid var(--line);border-radius:14px;
+        padding:30px 26px;height:600px;overflow:auto}
+  .card::-webkit-scrollbar{width:8px}
+  .card::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+  .chead{display:flex;gap:18px;align-items:flex-start}
+  .ccover{width:88px;height:88px;flex:0 0 auto;border:1px solid var(--line);border-radius:6px;
+          background:var(--desk);display:flex;align-items:center;justify-content:center}
+  .ccover svg{width:26px;height:26px;opacity:.5}
+  .ckick{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+         color:var(--muted);margin-bottom:7px}
+  .cname{font-family:var(--serif);font-size:28px;font-weight:400;line-height:1.1;letter-spacing:-.01em}
+  .cdesc{font-family:var(--serif);font-size:14px;line-height:1.62;color:var(--muted);margin-top:11px}
+
+  .csect{margin-top:28px;padding-top:0}
+  .csect + .csect{margin-top:30px}
+  .csecthead{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .csecthead .t{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;
+                text-transform:uppercase;color:var(--muted)}
+  .csecthead .hair{flex:1;height:1px;background:var(--line)}
+  .csecthead .c{font-family:var(--mono);font-size:9.5px;color:var(--muted);opacity:.7}
+
+  /* grupo de tipo — clicavel, vira o filtro */
+  .g3{margin-bottom:22px}
+  .g3:last-child{margin-bottom:0}
+  .g3lab{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;cursor:pointer;
+         font-family:var(--mono);font-size:11px;color:var(--muted);
+         transition:color .18s ease,opacity .18s ease}
+  .g3lab .n{font-size:9.5px;opacity:.55}
+  .g3lab .car{font-size:9px;opacity:.45;display:inline-block;transition:transform .18s ease;
+              transform:rotate(0deg);width:7px}
+  .g3lab:hover{color:var(--accent)}
+  .g3lab:hover .car{opacity:.9}
+  .g3lab.on{color:var(--ink)}
+  .g3lab.on .car{transform:rotate(90deg);opacity:.9}
+  .g3 .rows{margin-top:2px}
+  .expand{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--muted);cursor:pointer;background:none;border:0;padding:0;
+          transition:color .18s ease}
+  .expand:hover{color:var(--accent)}
+
+  /* a linha: rotulo à esquerda em coluna, nome em serifa */
+  .r{display:grid;grid-template-columns:94px 1fr;gap:16px;align-items:baseline;
+     padding:6px 0 6px 2px;cursor:pointer;border-left:2px solid transparent;
+     transition:border-color .18s ease}
+  .r .lab{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.7;
+          text-align:right;line-height:1.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .r .nm{font-family:var(--serif);font-size:15.5px;color:var(--ink);line-height:1.35;
+         transition:color .18s ease}
+  .r:hover{border-left-color:var(--accent)}
+  .r:hover .nm{color:var(--accent)}
+  .r:hover .lab{opacity:1}
+
+  .thumbs{display:flex;gap:8px}
+  .th{width:58px;height:58px;border-radius:5px;border:1px solid var(--line);background:var(--desk)}
+  .th.more{display:flex;align-items:center;justify-content:center;border-style:dashed;
+           font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+  .r1head{margin:54px 0 8px;font-family:var(--serif);font-size:20px;font-weight:400}
+
+  /* ================= ronda 2 ================= */
+  .r2head{margin:46px 0 6px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .r2head h2{font-family:var(--serif);font-size:20px;font-weight:400}
+  .stress{display:flex;gap:6px}
+
+  /* linhas com nome primeiro, relacao como anotacao */
+  .item{display:flex;align-items:baseline;gap:10px;padding:3px 0;cursor:pointer}
+  .item .nm{font-size:13px;color:var(--ink)}
+  .item .rel{font-size:10.5px;color:var(--muted);opacity:.75;margin-left:auto;
+             letter-spacing:.02em;white-space:nowrap}
+  .item:hover .nm{color:var(--accent)}
+
+  /* rotulo de grupo que tambem e o filtro */
+  .glabel{display:flex;align-items:center;gap:9px;margin:16px 0 6px;cursor:pointer;
+          font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .glabel:first-child{margin-top:0}
+  .glabel .rule{flex:1;height:1px;background:var(--line)}
+  .glabel .n{font-size:9.5px;opacity:.6;letter-spacing:.08em}
+  .glabel:hover{color:var(--accent)}
+  .glabel:hover .rule{background:var(--accent);opacity:.35}
+  .glabel.on{color:var(--accent)}
+  .glabel.on .rule{background:var(--accent);opacity:.35}
+  .glabel.dim{opacity:.35}
+
+  /* indice em uma linha, sem pilulas */
+  .index{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+         margin-bottom:14px;line-height:2}
+  .index a{cursor:pointer;color:var(--muted);text-decoration:none;
+           border-bottom:1px solid transparent;padding-bottom:2px}
+  .index a:hover{color:var(--accent)}
+  .index a.on{color:var(--ink);border-bottom-color:var(--accent)}
+  .index a .n{opacity:.5;margin-left:4px;font-size:9px}
+  .index .sep{opacity:.3;margin:0 7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <h1>conexões agrupadas por tipo<span>.</span></h1>
+    <button class="btn" id="theme">modo escuro</button>
+  </div>
+  <p class="sub">Passada geral no painel de leitura. Os tipos começam fechados — clique num deles para abrir, ou em <b>expand all</b>. O botão de estresse mostra com 7 tipos, e no canto para o modo escuro. As rondas anteriores ficaram no fim da página.</p>
+
+
+  <div class="r3row">
+    <div class="r3col" style="width:420px">
+      <div class="cap">largura real do painel no app &mdash; <b>420px</b></div>
+      <div class="card" id="card420"></div>
+    </div>
+    <div class="r3col" style="width:560px">
+      <div class="cap">com mais folga &mdash; <b>560px</b></div>
+      <div class="card" id="card560"></div>
+    </div>
+    <div class="r3col" style="flex:1 1 260px;min-width:250px">
+      <div class="cap">o que mudou</div>
+      <div class="note" style="margin-top:0">
+        <b>Duas fam&iacute;lias, dois pap&eacute;is.</b> Serifa &eacute; <i>conte&uacute;do</i> (nome da entidade, nome de cada conex&atilde;o, descri&ccedil;&atilde;o); mono &eacute; <i>etiqueta</i> (r&oacute;tulos, contagens, a rela&ccedil;&atilde;o). A hierarquia passa a vir da <b>letra</b>, n&atilde;o de mais um tamanho de fonte.<br><br>
+        <b>A rela&ccedil;&atilde;o volta pra frente</b>, como voc&ecirc; apontou &mdash; <i>father of &rarr; Robin</i> &eacute; a ordem certa. S&oacute; que agora ela mora numa <b>coluna alinhada &agrave; direita</b>: o olho desce pela margem dos nomes, e as rela&ccedil;&otilde;es formam uma segunda coluna silenciosa &agrave; esquerda. A seta some &mdash; a coluna j&aacute; faz o trabalho dela.<br><br>
+        <b>Um kicker s&oacute; por se&ccedil;&atilde;o.</b> Antes havia quatro r&oacute;tulos em caixa alta brigando. Agora <b>CONNECTIONS</b> e <b>GALLERY</b> s&atilde;o os &uacute;nicos em versal; os tipos ficam em min&uacute;scula, um degrau abaixo.<br><br>
+        <b>Fechado por padr&atilde;o.</b> A ficha abre como um <b>&iacute;ndice</b>: os tipos e quantos cada um tem, tudo vis&iacute;vel sem rolagem. Clicar num tipo abre s&oacute; ele; d&aacute; pra ter v&aacute;rios abertos ao mesmo tempo. O <b>expand all</b> abre todos e vira <i>collapse all</i>.<br><br>
+        <b>Hover na linha inteira</b>, com uma barra roxa fina na margem &mdash; alvo grande, ru&iacute;do baixo.
+      </div>
+      <div class="stress" style="margin-top:11px">
+        <button class="btn" id="s3-small">4 tipos</button>
+        <button class="btn" id="s3-big">7 tipos, 20 conex&otilde;es</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="r1head">rondas anteriores &mdash; para compara&ccedil;&atilde;o</h2>
+
+  <div class="cols">
+
+    <!-- ============ A ============ -->
+    <div class="col">
+      <div class="colhead"><b>A</b> — subgrupos dentro de CONNECTIONS</div>
+      <div class="pane">
+        <div class="fhead">
+          <div class="cover"><svg viewBox="0 0 46 46"><line x1="23" y1="24" x2="10" y2="17" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><line x1="23" y1="24" x2="37" y2="13" stroke="var(--muted)" stroke-width="2.6" stroke-linecap="round"/><line x1="23" y1="24" x2="17" y2="38" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="17" r="2.8" fill="var(--muted)"/><circle cx="37" cy="13" r="2.8" fill="var(--muted)"/><circle cx="17" cy="38" r="2.8" fill="var(--muted)"/><circle cx="23" cy="24" r="5" fill="var(--muted)"/></svg></div>
+          <div>
+            <div class="etype">character</div>
+            <div class="ename">Batman</div>
+            <div class="edesc">A mysterious vigilante who protects Gotham City from crime.</div>
+          </div>
+        </div>
+        <div class="sect">
+          <div class="skick">connections</div>
+          <div id="A"></div>
+        </div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        "Conexões" continua sendo <b>um bloco só</b>; o tipo é arrumação interna. O rótulo do grupo é menor, mais apagado e leva uma linha fina — hierarquia clara abaixo do <b>CONNECTIONS</b>.<br><br>
+        <span class="good">A favor:</span> a ficha mantém a leitura "quem é · com quem se liga · fotos".<br>
+        <b>Contra:</b> com muitos tipos o bloco fica alto e a galeria vai pro fim do mundo.
+      </div>
+    </div>
+
+    <!-- ============ B ============ -->
+    <div class="col">
+      <div class="colhead"><b>B</b> — cada tipo é uma seção</div>
+      <div class="pane">
+        <div class="fhead">
+          <div class="cover"><svg viewBox="0 0 46 46"><line x1="23" y1="24" x2="10" y2="17" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><line x1="23" y1="24" x2="37" y2="13" stroke="var(--muted)" stroke-width="2.6" stroke-linecap="round"/><line x1="23" y1="24" x2="17" y2="38" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="17" r="2.8" fill="var(--muted)"/><circle cx="37" cy="13" r="2.8" fill="var(--muted)"/><circle cx="17" cy="38" r="2.8" fill="var(--muted)"/><circle cx="23" cy="24" r="5" fill="var(--muted)"/></svg></div>
+          <div>
+            <div class="etype">character</div>
+            <div class="ename">Batman</div>
+            <div class="edesc">A mysterious vigilante who protects Gotham City from crime.</div>
+          </div>
+        </div>
+        <div id="B"></div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        A palavra <b>connections</b> some. A ficha vira uma lista de assuntos: personagens, filmes, lugares, objetos, galeria.<br><br>
+        <span class="good">A favor:</span> cada tipo tem o mesmo peso da galeria — plano, previsível, fácil de varrer.<br>
+        <b>Contra:</b> perde-se a ideia de "as ligações desta entidade" como uma coisa só; e a galeria passa a parecer mais um tipo de conexão.
+      </div>
+    </div>
+
+    <!-- ============ C ============ -->
+    <div class="col">
+      <div class="colhead"><b>C</b> — CONNECTIONS com filtro por tipo</div>
+      <div class="pane">
+        <div class="fhead">
+          <div class="cover"><svg viewBox="0 0 46 46"><line x1="23" y1="24" x2="10" y2="17" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><line x1="23" y1="24" x2="37" y2="13" stroke="var(--muted)" stroke-width="2.6" stroke-linecap="round"/><line x1="23" y1="24" x2="17" y2="38" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="17" r="2.8" fill="var(--muted)"/><circle cx="37" cy="13" r="2.8" fill="var(--muted)"/><circle cx="17" cy="38" r="2.8" fill="var(--muted)"/><circle cx="23" cy="24" r="5" fill="var(--muted)"/></svg></div>
+          <div>
+            <div class="etype">character</div>
+            <div class="ename">Batman</div>
+            <div class="edesc">A mysterious vigilante who protects Gotham City from crime.</div>
+          </div>
+        </div>
+        <div class="sect">
+          <div class="skick">connections</div>
+          <div class="chips" id="chips"></div>
+          <div id="C"></div>
+        </div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        Um bloco só, de altura <b>constante</b>: o tipo vira botão de peneira, não título. Clica nas pílulas pra testar.<br><br>
+        <span class="good">A favor:</span> não cresce com o número de tipos, e a contagem por tipo já é informação.<br>
+        <b>Contra:</b> esconde conexão atrás de clique — e a ficha deixa de ser "tudo à vista", que é o espírito do Foco.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="r2head">
+    <h2>ronda 2 &mdash; h&iacute;bridos</h2>
+    <div class="stress">
+      <button class="btn" id="s-small">4 tipos</button>
+      <button class="btn" id="s-big">7 tipos, 20 conex&otilde;es</button>
+    </div>
+  </div>
+  <p class="sub">O r&oacute;tulo e o filtro viram <b>a mesma coisa</b> &mdash; nada de pastilha extra repetindo o que o t&iacute;tulo j&aacute; diz. E a linha mudou de ordem: o <b>nome</b> vem primeiro, em tinta cheia; a rela&ccedil;&atilde;o (&ldquo;father of&rdquo;) recua pra anota&ccedil;&atilde;o &agrave; direita. O olho passa a descer uma coluna de nomes em vez de ler frases.</p>
+
+  <div class="cols">
+
+    <div class="col">
+      <div class="colhead"><b>D</b> &mdash; o r&oacute;tulo &eacute; o filtro</div>
+      <div class="pane">
+        <div class="sect" style="border:0;margin:0;padding:0">
+          <div class="skick">connections</div>
+          <div id="D"></div>
+        </div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        Clique num r&oacute;tulo: ele fica roxo e os outros grupos recolhem. Clique de novo pra voltar.<br><br>
+        <span class="good">A favor:</span> zero elementos novos &mdash; o t&iacute;tulo j&aacute; estava l&aacute; e agora trabalha em dobro. Em &ldquo;tudo&rdquo; voc&ecirc; continua vendo o que &eacute; filme e o que &eacute; personagem.<br>
+        <b>Contra:</b> pra saber que d&aacute; pra filtrar, tem que descobrir no hover.
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="colhead"><b>E</b> &mdash; &iacute;ndice em uma linha + grupos</div>
+      <div class="pane">
+        <div class="sect" style="border:0;margin:0;padding:0">
+          <div class="skick">connections</div>
+          <div class="index" id="Eindex"></div>
+          <div id="E"></div>
+        </div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        Mesma ideia da C, sem as pastilhas: uma linha de &iacute;ndice, texto puro, separada por pontos. Com 7 tipos ela quebra em duas linhas e continua leve.<br><br>
+        <span class="good">A favor:</span> o filtro &eacute; vis&iacute;vel sem gritar, e a contagem por tipo j&aacute; informa o tamanho do acervo.<br>
+        <b>Contra:</b> duplica os nomes dos tipos &mdash; eles aparecem no &iacute;ndice <i>e</i> como r&oacute;tulo de grupo.
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="colhead"><b>F</b> &mdash; s&oacute; os grupos, sem filtro</div>
+      <div class="pane">
+        <div class="sect" style="border:0;margin:0;padding:0">
+          <div class="skick">connections</div>
+          <div id="F"></div>
+        </div>
+        <div class="sect">
+          <div class="skick">gallery</div>
+          <div class="conn">6 photos</div>
+        </div>
+      </div>
+      <div class="note">
+        O controle de compara&ccedil;&atilde;o: a hierarquia nova (r&oacute;tulo fino com r&eacute;gua, nome em tinta, rela&ccedil;&atilde;o recuada) <b>sem</b> nenhuma intera&ccedil;&atilde;o.<br><br>
+        Vale olhar com 7 tipos: se isso j&aacute; estiver confort&aacute;vel de varrer, o filtro pode ser coisa de depois &mdash; e a a tela fica mais silenciosa.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CONNS=[
+  {label:'father of',  name:'Robin',           type:'characters'},
+  {label:'ally of',    name:'Alfred',          type:'characters'},
+  {label:'enemy of',   name:'Coringa',         type:'characters'},
+  {label:'appears in', name:'The Dark Knight', type:'movies'},
+  {label:'appears in', name:'Batman Begins',   type:'movies'},
+  {label:'protects',   name:'Gotham City',     type:'places'},
+  {label:'fears',      name:'Arkham',          type:'places'},
+  {label:'drives',     name:'Batmovel',        type:'objects'},
+]
+const TYPES=['characters','movies','places','objects']
+const row = c => '<div class="conn">' + c.label + ' &rarr; <b>' + c.name + '</b></div>'
+
+// A - subgrupos
+document.getElementById('A').innerHTML = TYPES.map(t =>
+  '<div class="grp"><div class="gkick">' + t + '</div>' +
+  CONNS.filter(c => c.type === t).map(row).join('') + '</div>').join('')
+
+// B - secoes irmas
+document.getElementById('B').innerHTML = TYPES.map(t =>
+  '<div class="sect"><div class="skick">' + t + '</div>' +
+  CONNS.filter(c => c.type === t).map(row).join('') + '</div>').join('')
+
+// C - filtro
+let filter = 'all'
+const chips = document.getElementById('chips'), listC = document.getElementById('C')
+function drawC(){
+  const buckets = [['all', CONNS.length]].concat(TYPES.map(t => [t, CONNS.filter(c => c.type === t).length]))
+  chips.innerHTML = buckets.map(function(b){
+    return '<button class="chip' + (filter === b[0] ? ' on' : '') + '" data-t="' + b[0] + '">' +
+           b[0] + '<span class="n">' + b[1] + '</span></button>'
+  }).join('')
+  listC.innerHTML = CONNS.filter(c => filter === 'all' || c.type === filter).map(row).join('')
+  chips.querySelectorAll('.chip').forEach(function(b){ b.onclick = function(){ filter = b.dataset.t; drawC() } })
+}
+drawC()
+
+
+// ===================== ronda 2 =====================
+const SMALL = CONNS
+const BIG = [
+  {label:'father of',   name:'Robin',            type:'characters'},
+  {label:'ally of',     name:'Alfred',           type:'characters'},
+  {label:'enemy of',    name:'Coringa',          type:'characters'},
+  {label:'enemy of',    name:'Duas-Caras',       type:'characters'},
+  {label:'trained by',  name:'Ra’s al Ghul',  type:'characters'},
+  {label:'appears in',  name:'The Dark Knight',  type:'movies'},
+  {label:'appears in',  name:'Batman Begins',    type:'movies'},
+  {label:'appears in',  name:'The Dark Knight Rises', type:'movies'},
+  {label:'protects',    name:'Gotham City',      type:'places'},
+  {label:'fears',       name:'Arkham',           type:'places'},
+  {label:'hides in',    name:'Batcaverna',       type:'places'},
+  {label:'drives',      name:'Batmóvel',      type:'objects'},
+  {label:'wears',       name:'Batarangue',       type:'objects'},
+  {label:'reads',       name:'Detective Comics', type:'books'},
+  {label:'origin in',   name:'Year One',         type:'books'},
+  {label:'theme by',    name:'Hans Zimmer',      type:'people'},
+  {label:'created by',  name:'Bob Kane',         type:'people'},
+  {label:'created by',  name:'Bill Finger',      type:'people'},
+  {label:'movido por',  name:'Vingança',      type:'ideas'},
+  {label:'movido por',  name:'Justiça',       type:'ideas'},
+]
+let data = SMALL
+let solo = null   // D
+let pick = 'all'  // E
+
+const typesOf = list => list.map(c => c.type).filter((t,i,a) => a.indexOf(t) === i)
+const itemRow = c =>
+  '<div class="item"><span class="nm">' + c.name + '</span><span class="rel">' + c.label + '</span></div>'
+
+function groupBlock(t, list, opts){
+  opts = opts || {}
+  const rows = list.filter(c => c.type === t)
+  const cls = 'glabel' + (opts.on ? ' on' : '') + (opts.dim ? ' dim' : '')
+  const attr = opts.clickable ? ' data-t="' + t + '"' : ''
+  const head = '<div class="' + cls + '"' + attr + '><span>' + t +
+               '</span><span class="rule"></span><span class="n">' + rows.length + '</span></div>'
+  return head + (opts.collapsed ? '' : rows.map(itemRow).join(''))
+}
+
+function drawD(){
+  const box = document.getElementById('D')
+  box.innerHTML = typesOf(data).map(t => groupBlock(t, data, {
+    clickable:true, on: solo === t, dim: solo !== null && solo !== t, collapsed: solo !== null && solo !== t
+  })).join('')
+  box.querySelectorAll('.glabel').forEach(function(g){
+    g.onclick = function(){ solo = (solo === g.dataset.t) ? null : g.dataset.t; drawD() }
+  })
+}
+
+function drawE(){
+  const idx = document.getElementById('Eindex'), box = document.getElementById('E')
+  const buckets = [['all', data.length]].concat(typesOf(data).map(t => [t, data.filter(c => c.type === t).length]))
+  idx.innerHTML = buckets.map(function(b){
+    return '<a data-t="' + b[0] + '" class="' + (pick === b[0] ? 'on' : '') + '">' +
+           b[0] + '<span class="n">' + b[1] + '</span></a>'
+  }).join('<span class="sep">&middot;</span>')
+  box.innerHTML = pick === 'all'
+    ? typesOf(data).map(t => groupBlock(t, data, {})).join('')
+    : data.filter(c => c.type === pick).map(itemRow).join('')
+  idx.querySelectorAll('a').forEach(function(a){
+    a.onclick = function(){ pick = a.dataset.t; drawE() }
+  })
+}
+
+function drawF(){
+  document.getElementById('F').innerHTML = typesOf(data).map(t => groupBlock(t, data, {})).join('')
+}
+
+function drawR2(){ drawD(); drawE(); drawF() }
+drawR2()
+
+document.getElementById('s-small').onclick = function(){ data = SMALL; solo = null; pick = 'all'; drawR2() }
+document.getElementById('s-big').onclick   = function(){ data = BIG;   solo = null; pick = 'all'; drawR2() }
+
+
+// ===================== ronda 3 =====================
+const MARK = '<svg viewBox="0 0 46 46">' +
+  '<line x1="23" y1="24" x2="10" y2="17" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/>' +
+  '<line x1="23" y1="24" x2="37" y2="13" stroke="var(--muted)" stroke-width="2.6" stroke-linecap="round"/>' +
+  '<line x1="23" y1="24" x2="17" y2="38" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"/>' +
+  '<circle cx="10" cy="17" r="2.8" fill="var(--muted)"/><circle cx="37" cy="13" r="2.8" fill="var(--muted)"/>' +
+  '<circle cx="17" cy="38" r="2.8" fill="var(--muted)"/><circle cx="23" cy="24" r="5" fill="var(--muted)"/></svg>'
+
+let data3 = SMALL
+let open3 = []
+
+const line3 = c => '<div class="r"><span class="lab">' + c.label + '</span><span class="nm">' + c.name + '</span></div>'
+const isOpen = t => open3.indexOf(t) !== -1
+
+function card3(){
+  const types = typesOf(data3)
+  const allOpen = types.every(isOpen)
+  const groups = types.map(function(t){
+    const rows = data3.filter(function(c){ return c.type === t })
+    const open = isOpen(t)
+    return '<div class="g3">' +
+             '<div class="g3lab' + (open ? ' on' : '') + '" data-t="' + t + '">' +
+               '<span class="car">&#9656;</span>' +
+               '<span>' + t + '</span><span class="n">' + rows.length + '</span>' +
+             '</div>' +
+             (open ? '<div class="rows">' + rows.map(line3).join('') + '</div>' : '') +
+           '</div>'
+  }).join('')
+
+  return '<div class="chead">' +
+           '<div class="ccover">' + MARK + '</div>' +
+           '<div>' +
+             '<div class="ckick">character</div>' +
+             '<div class="cname">Batman</div>' +
+             '<div class="cdesc">A mysterious vigilante who protects Gotham City from crime, ' +
+             'using intelligence, combat skills and advanced technology.</div>' +
+           '</div>' +
+         '</div>' +
+         '<div class="csect">' +
+           '<div class="csecthead"><span class="t">connections</span><span class="hair"></span>' +
+             '<button class="expand" data-all="1">' + (allOpen ? 'collapse all' : 'expand all') + '</button>' +
+             '<span class="c">' + data3.length + '</span>' +
+           '</div>' + groups +
+         '</div>' +
+         '<div class="csect">' +
+           '<div class="csecthead"><span class="t">gallery</span><span class="hair"></span>' +
+           '<span class="c">6</span></div>' +
+           '<div class="thumbs"><div class="th"></div><div class="th"></div><div class="th"></div>' +
+           '<div class="th"></div><div class="th more">+2</div></div>' +
+         '</div>'
+}
+
+function drawR3(){
+  const html = card3()
+  ;['card420','card560'].forEach(function(id){
+    const el = document.getElementById(id)
+    el.innerHTML = html
+    el.querySelectorAll('.g3lab').forEach(function(g){
+      g.onclick = function(){
+        const t = g.dataset.t
+        if (isOpen(t)) open3 = open3.filter(function(x){ return x !== t })
+        else open3 = open3.concat([t])
+        drawR3()
+      }
+    })
+    el.querySelector('.expand').onclick = function(){
+      const types = typesOf(data3)
+      open3 = types.every(isOpen) ? [] : types
+      drawR3()
+    }
+  })
+}
+drawR3()
+document.getElementById('s3-small').onclick = function(){ data3 = SMALL; open3 = []; drawR3() }
+document.getElementById('s3-big').onclick   = function(){ data3 = BIG;   open3 = []; drawR3() }
+
+const root = document.documentElement, tbtn = document.getElementById('theme')
+tbtn.onclick = function(){
+  const dark = root.getAttribute('data-theme') === 'dark'
+  root.setAttribute('data-theme', dark ? 'light' : 'dark')
+  tbtn.textContent = dark ? 'modo escuro' : 'modo claro'
+}
+</script>
+</body>
+</html>
