@@ -20,7 +20,7 @@ def list_entity_relationships(entity_id: int, db = Depends(get_db)):
 
 @router.post("/relationships", response_model=RelationshipRead)
 def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
-    new_relationship = Relationship(label=payload.label, target_id=payload.target_id, source_id=payload.source_id, weight=payload.weight)
+    new_relationship = Relationship(label=payload.label, gloss=payload.gloss, target_id=payload.target_id, source_id=payload.source_id, weight=payload.weight)
     db.add(new_relationship)
     try:
         db.commit()

@@ -289,3 +289,76 @@ Pra isso o front precisa saber **por onde se entrou** — um state novo, `númer
 - só a lista `connections` atravessa, e sempre no sentido **saída** (o Foco só mostra conexões de saída, decisão de 2026-08-21).
 
 Logo, **uma coluna basta**: o sentido contrário não é alcançável hoje. O problema dos dois textos (ida × volta) volta no dia em que o Foco mostrar conexões de **entrada**, ou no dia em que a aresta da constelação virar clicável. Guardado com o gatilho anotado, não ignorado.
+
+---
+
+## Decisão (2026-09-02) — LORE: o recorte, e a travessia entre lores
+
+> Mockups: [`atlas-mockup.html`](./atlas-mockup.html) (ver o acervo inteiro) e [`lore-crossing-mockup.html`](./lore-crossing-mockup.html) (a travessia).
+
+**`lore` é o nome do que une** um conjunto de entidades — e é um **recorte**, não um recipiente. "Constelação" passa a ser o *modo de ver*, não a coisa vista: a lore da DC tem grade, constelação e painel de leitura, três janelas para o mesmo recorte.
+
+**Uma entidade pode estar em várias lores.** O vínculo é tabela de ligação (entidade ↔ lore), a mesma forma do `relationship`. `Vengeance` está na DC **e** na lore pessoal, sem escolher — e isso não é caso especial, é o esperado: `Concept` é justamente o tipo que reaparece. Forçar uma lore só seria o mesmo erro da descrição com dono.
+
+> **Nunca se ligam duas lores. Ligam-se entidades. As lores se tocam sozinhas quando compartilham alguma.**
+
+A HQ *Batman/Spider-Man* é uma entidade que pertence às duas lores e se conecta ao Batman e ao Homem-Aranha como qualquer outra conexão. Não existe vínculo "DC ↔ Marvel" no banco: existe uma HQ bem colocada. É a frase fundadora — *tudo é uma entidade, e tudo pode se conectar* — aplicada um nível acima.
+
+### O que aparece na borda
+
+Desenhando a lore da DC, uma aresta sai da HQ em direção ao Homem-Aranha, que **não pertence** a esse recorte. Ele **aparece**, e aparece marcado.
+
+- **Cor `--color-beyond`.** `#4c6e94` no claro, `#8bafd4` no escuro. Não é "um azul": é o roxo (`267°, 32%, 44%`) com o **matiz girado para 210°**, mantendo saturação e luminosidade. Por isso parecem irmãos. Token nomeado pelo **papel**, como os outros (`desk`, `canvas`, `ink`) — no dia em que o azul não servir, o nome continua verdadeiro.
+- **Repulsão maior na simulação**, para o nó de fora cair naturalmente na periferia. Assim "horizonte" deixa de ser metáfora e vira posição.
+- **Arestas que se perdem:** dois ou três tocos saindo dele e desbotando até sumir. Na gramática do grafo, aresta que não termina só pode significar um nó que você não está vendo.
+- **Respiração lenta:** um anel expandindo em ~6s, contra os 2,6s do pulso roxo. O ritmo é que carrega o sentido — o rápido diz *"você está aqui"*, o lento diz *"algo respira lá longe"*.
+- **Brilho** *(escolhido)*: um gradiente radial difuso vazando de fora do quadro, com raio proporcional ao tamanho da lore vizinha. **Anuncia a escala sem dizer o número** — Marvel com 874 entidades e a lore pessoal com 38 têm nuvens visivelmente diferentes.
+  *(Descartados: **poeira** — pontinhos espalhados leem como sujeira, porque não têm estrutura; **nós-fantasma** — informativo demais, entrega o que devia ser descoberto; **horizonte** — arcos bonitos, mas fáceis de não notar.)*
+- **No hover, palavra e não número:** `marvel ↗`. O nome de um lugar é porta; "874 entities" é planilha. A contagem, se aparecer, aparece no painel de leitura.
+
+### A travessia
+
+> **O nó clicado não se move e não desaparece. Quem se dissolve é o mundo em volta dele.**
+
+É esse ponto fixo que separa **travessia** de troca de página. A sequência:
+
+1. o azul vira roxo;
+2. a lore antiga perde opacidade e **infla para fora**, a partir da âncora;
+3. a lore nova entra **encolhida em direção à âncora** e assenta em volta dela;
+4. o pulso nasce no nó ancorado;
+5. o nome da lore no cabeçalho troca **por último** (~480ms), confirmando o que já aconteceu;
+6. só **depois** de tudo assentar, a câmera desliza para reenquadrar a lore nova — durante a dissolução a âncora fica cravada; o reenquadramento é o assentamento.
+
+E chegando na Marvel, **o Batman vira o azul do horizonte**. A porta funciona nos dois sentidos sem nenhum mecanismo novo: ele é só uma entidade que não pertence à lore que você está olhando.
+
+### Ver o acervo inteiro
+
+A exploração continua sendo o padrão, mas existe saída para quem cansou de descobrir de um em um: um botão discreto na topbar, ao lado da busca, com a **contagem** (`all · 117`) — que já é informação. Abre uma camada sobre os dois painéis, sai com `Esc`.
+
+**Modo grade** *(escolhido)*: fichas com capa, tipo e nome, com filtro por tipo e ordenação (a–z, mais ligadas, por tipo). Usa as capas do B2 — vira vitrine, boa para **reconhecer**. *(A lista densa em três colunas continua sendo melhor para **procurar**; fica como possível segundo modo.)*
+
+### O que isto cobra, quando chegar a vez
+
+- Tabela `lore` + tabela de ligação `entity_lore`; toda leitura do grafo passa a ter um recorte.
+- Uma entidade **sem lore** precisa de resposta: fica órfã, ou existe uma lore padrão?
+- A busca é teletransporte (você sabe o nome); a camada é inventário (você não sabe). As duas têm campo de texto e o usuário não sabe disso — talvez a busca deva terminar com "ver todas as 117".
+
+---
+
+## Decisão (2026-09-02, parte 2) — A GLOSA, construída
+
+A coluna se chama **`gloss`** — em edição de texto, uma *glosa* é a explicação de **uma passagem**, não da obra inteira, que é exatamente a diferença entre isto e a `description` da entidade. *(Descartado `note`: a palavra está reservada pela fase 4, "consumo / notas / memórias reificadas". **Nome de coluna é reserva** — gastar uma palavra que o roadmap já prometeu deixa a feature futura sem ela.)*
+
+Opcional por decisão dela, e é isso que faz a feature funcionar: obrigatória, toda conexão criada exigiria um parágrafo escrito à mão e a glosa viraria pedágio. Sem ela, o painel cai na descrição genérica — `arrivalGloss ?? entity.description`.
+
+**Correção da parte 1:** ali estava escrito que *"só a lista `connections` atravessa aresta"*. É forte demais. O certo:
+
+> A constelação **não** atravessa quando o nó clicado não tem ligação com o foco — aí é teletransporte, como a busca. Mas quando o nó clicado **é vizinho**, existe aresta entre os dois e você veio por ela.
+
+Daí a regra que organiza o front:
+
+> **Todo lugar que troca o foco deve uma resposta sobre a chegada** — ou "vim por esta aresta", ou "vim de lugar nenhum".
+
+São três portas: a lista `connections` (sempre tem aresta), o nó da constelação (tem se for vizinho, `null` se não) e a busca (sempre `null`). Deixar qualquer uma calada faz a glosa anterior grudar numa entidade que não tem nada a ver com ela — foi o bug que apareceu no teste.
+
+Continua valendo o limite do sentido: a busca no grafo só encontra glosa quando a aresta **sai** do foco. Quando as conexões de **entrada** aparecerem no Foco, isso volta à mesa junto com a questão dos dois sentidos.

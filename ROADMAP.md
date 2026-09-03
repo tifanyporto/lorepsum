@@ -13,7 +13,7 @@
 
 - **Backend (núcleo):** modelos `EntityType` · `Entity` · `Relationship` (FK/cascade, weight, constraints) + schemas Pydantic + **CRUD completo**, rodando contra o **servidor soberano** (Postgres no celular via Tailscale).
 - **Backend (organização):** endpoints separados em **routers por recurso** (`app/routers/`).
-- **Frontend (pele de aprendizado):** CRUD de entidades integrado na API (lista / cria / edita / deleta).
+- ~~**Frontend (pele de aprendizado):** CRUD de entidades integrado na API~~ — **removido em 2026-09-02**, volta como feature desenhada (ver ⏭️ Próximo).
 - **Frontend — conexões (núcleo):** criar `relationship` pela UI + exibir a conexão no card da entidade. **Testado end-to-end.** 🌟
 - **Frontend — tela de FOCO:** o **"focar & pular"** está vivo — entidade no centro, conexões de saída como links que navegam. Vestida no sistema de design (paleta papel, Fraunces + IBM Plex Mono, claro/escuro), responsiva, com componentes extraídos (`ThemeToggle`, `Logo`, `Search`).
 - **Frontend — busca:** filtra entidades por nome e navega no clique.
@@ -22,6 +22,9 @@
 - **Painel de leitura refeito (2026-09-02):** dois painéis lado a lado sem rolagem de página · serifa pro conteúdo e mono pra etiqueta · conexão em duas colunas (`label` à direita, nome à esquerda) · **conexões agrupadas pelo tipo do destino**, fechadas por padrão, com `expand all` e barra de rolagem fina no roxo. Decisões em `design.md`.
 - **Backend:** `/relationships` e `/entities/{id}/relationships` **não devolvem mais conexões de entidades arquivadas** — os dois endpoints discordavam sobre quem existe, e o grafo quebrava com `node not found`.
 - **Acervo de teste:** 117 entidades e 218 relações do universo DC (6 tipos), semeadas pela API.
+- **Estado vazio das conexões:** entidade sem nenhuma conexão de saída mostra "there are no connections yet." — e o `expand all` some, porque botão que não tem o que expandir não deve existir.
+- **Glosa na aresta (2026-09-02):** coluna `gloss` em `relationship` (opcional) + schemas + o front escolhendo `arrivalGloss ?? entity.description`. As três portas que trocam o foco — lista de conexões, nó da constelação e busca — respondem cada uma sobre a chegada. Decisões em `design.md`.
+- **`types.ts` honesto:** `label`, `gloss` e as duas `description` passaram a `string | null`, como os schemas do backend sempre disseram. O TypeScript voltou a proteger o que devia.
 - **Infra:** servidor soberano (postmarketOS + Postgres 18 + Tailscale), reboot-proof.
 - **Design:** marca (símbolo, wordmark, paleta, fontes) + **landing** + **fluxo de onboarding conversacional** DEFINIDOS (`docs/design/`).
 
@@ -38,12 +41,12 @@
 
 ## ⏭️ Próximo (fundação que falta)
 
-- **Mensagem de "sem conexões"** quando a entidade não tem nenhuma saída (`Batarang`, `Bat-Signal`, `Cape and Cowl` servem de teste).
-- **Descrição na aresta** — coluna de texto em `relationship` com a leitura contextual daquela ligação, e um state no front guardando **por onde se entrou** (`descrição da aresta ?? descrição da entidade`). Desenho fechado em `design.md` (2026-09-02).
+- **CRUD do zero, sobre design novo.** O `App.tsx` (a "pele de aprendizado": lista, cria, edita e deleta entidades) **foi removido** em 2026-09-02 — não era mais renderizado, e continuava sendo compilado e quebrando por mudanças alheias. Criar, editar e apagar entidades e conexões volta como **feature desenhada**, não como formulário de teste. A mecânica antiga (`POST`/`PATCH`/`DELETE` do front, formulário controlado) fica recuperável em `git show <commit>:frontend/src/App.tsx`.
 - **Validação de `weight` na borda (Pydantic) + erros mais honestos no `create_relationship`** — hoje `weight: 0` viola o CHECK do banco e vira **409 "invalid link."**, a mesma mensagem usada pra FK inválida, `source == target` e duplicada. A faixa 1–3 devia ser recusada pelo schema (**422**, apontando o campo), e o 409 ficar só pro caso de conflito de verdade.
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
+- **`lore` — o recorte** *(desenho fechado 2026-09-02, `design.md`)*. Tabela `lore` + ligação `entity_lore` (uma entidade pode estar em várias). A **grade** para ver o acervo inteiro, e a **travessia** entre lores: nó de fora em `--color-beyond`, brilho proporcional ao tamanho da lore vizinha, e o clique dissolvendo o mundo em volta de uma âncora parada. Depende de auth para fazer sentido pleno (várias lores por usuário), mas a grade e a tabela de ligação já se pagam antes disso.
 - **Rótulo da aresta no hover** — mostrar o `label` da relação ao passar o mouse sobre a linha. Decidido em `design.md` (2026-08-26 parte 2), único lugar do grafo onde o texto livre da conexão aparece.
 - **Conexões de entrada no Foco** — hoje só as de saída aparecem (decisão de 2026-08-21). É essa mudança que reabre a questão dos **dois sentidos** da descrição de aresta.
 - **Botão de recentrar** ("voltar pro foco") — hoje, depois de arrastar longe, só clicando num nó ou recarregando.

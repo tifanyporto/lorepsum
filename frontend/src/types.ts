@@ -1,34 +1,34 @@
 type LogoProps = {
-    className?: string,
-    muted?: boolean
-}
+  className?: string;
+  muted?: boolean;
+};
 
 type EntityType = {
-  id: number
-  name: string
-}
+  id: number;
+  name: string;
+};
 
 type Entity = {
-    id: number
-    name: string
-    description: string
-    entity_type_id: number
-}
-
+  id: number;
+  name: string;
+  description: string | null;
+  entity_type_id: number;
+};
 
 type Relationship = {
-    id: number
-    source_id: number
-    target_id: number
-    label: string
-}
+  id: number;
+  source_id: number;
+  target_id: number;
+  label: string | null;
+  gloss: string | null;
+};
 
 type EntityImage = {
-    id: number
-    entity_id: number
-    path: string
-    cover: boolean
-    description: string
-}
+  id: number;
+  entity_id: number;
+  path: string;
+  cover: boolean;
+  description: string | null;
+};
 
-export type {LogoProps, Entity, Relationship, EntityType, EntityImage}
+export type { LogoProps, Entity, Relationship, EntityType, EntityImage };

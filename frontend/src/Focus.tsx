@@ -40,6 +40,7 @@ function Focus() {
   const [boxSize, setBoxSize] = useState({ width: 0, height: 0 });
   // quais tipos de conexão estão abertos no painel de leitura
   const [openTypes, setOpenTypes] = useState<string[]>([]);
+  const [arrivalGloss, setArrivalGloss] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/entity-types`)
@@ -144,7 +145,8 @@ function Focus() {
       label: r.label,
       targetId: r.target_id,
       name: target?.name,
-      typeName: targetType?.name ?? "outros",
+      gloss: r.gloss,
+      typeName: targetType?.name ?? "others",
     };
   });
   // os tipos presentes nessas conexões, sem repetir
@@ -159,7 +161,15 @@ function Focus() {
     <div className="h-screen flex flex-col bg-desk">
       <div className="flex items-center justify-between gap-3 p-4">
         <Logo />
-        <Search entities={entities} onSelect={setFocusedId} />
+        {
+          <Search
+            entities={entities}
+            onSelect={(id) => {
+              setFocusedId(id);
+              setArrivalGloss(null);
+            }}
+          />
+        }
         <ThemeToggle />
       </div>
       <div className="flex flex-1 min-h-0 max-h-[640px] my-auto w-full max-w-[1600px] mx-auto gap-3 px-8 pb-6 items-stretch">
@@ -264,6 +274,10 @@ function Focus() {
                       className="transition-all duration-300 cursor-pointer"
                       onClick={() => {
                         setFocusedId(n.id);
+                        setArrivalGloss(
+                          connections.find((c) => c.targetId === n.id)?.gloss ??
+                            null,
+                        );
                         setPan({
                           x: -(n.x ?? 0) * zoom,
                           y: -(n.y ?? 0) * zoom,
@@ -316,7 +330,7 @@ function Focus() {
                 {entity?.name}
               </h1>
               <p className="font-serif text-muted text-sm leading-[1.62] mt-[11px]">
-                {entity?.description}
+                {arrivalGloss ?? entity?.description}
               </p>
             </div>
           </div>
@@ -328,83 +342,94 @@ function Focus() {
                 connections
               </span>
               <span className="flex-1 h-px bg-line" />
-              <button
-                onClick={() =>
-                  setOpenTypes(
-                    openTypes.length === connectionTypes.length
-                      ? []
-                      : connectionTypes,
-                  )
-                }
-                className="font-mono text-muted text-[9.5px] uppercase tracking-[0.14em] cursor-pointer hover:text-accent transition-colors"
-              >
-                {openTypes.length === connectionTypes.length
-                  ? "collapse all"
-                  : "expand all"}
-              </button>
+              {relationships.length > 0 && (
+                <button
+                  onClick={() =>
+                    setOpenTypes(
+                      openTypes.length === connectionTypes.length
+                        ? []
+                        : connectionTypes,
+                    )
+                  }
+                  className="font-mono text-muted text-[9.5px] uppercase tracking-[0.14em] cursor-pointer hover:text-accent transition-colors"
+                >
+                  {openTypes.length === connectionTypes.length
+                    ? "collapse all"
+                    : "expand all"}
+                </button>
+              )}
               <span className="font-mono text-muted text-[9.5px] opacity-70">
                 {relationships.length}
               </span>
             </div>
 
-            {connectionTypes.map((typeName) => {
-              const rows = connections.filter((c) => c.typeName === typeName);
-              const isOpen = openTypes.includes(typeName);
-              return (
-                <div key={typeName} className="mb-[22px] last:mb-0">
-                  <div
-                    onClick={() =>
-                      setOpenTypes(
-                        isOpen
-                          ? openTypes.filter((t) => t !== typeName)
-                          : [...openTypes, typeName],
-                      )
-                    }
-                    className={`flex items-baseline gap-2.5 mb-2 cursor-pointer font-mono text-[14px] transition-colors hover:text-accent ${
-                      isOpen ? "text-ink" : "text-muted"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block w-[7px] text-[9px] opacity-50 transition-transform duration-200 ${
-                        isOpen ? "rotate-90" : ""
+            {relationships.length === 0 ? (
+              <p className="font-mono text-muted text-[12px]">
+                there are no connections yet.
+              </p>
+            ) : (
+              connectionTypes.map((typeName) => {
+                const rows = connections.filter((c) => c.typeName === typeName);
+                const isOpen = openTypes.includes(typeName);
+                return (
+                  <div key={typeName} className="mb-[22px] last:mb-0">
+                    <div
+                      onClick={() =>
+                        setOpenTypes(
+                          isOpen
+                            ? openTypes.filter((t) => t !== typeName)
+                            : [...openTypes, typeName],
+                        )
+                      }
+                      className={`flex items-baseline gap-2.5 mb-2 cursor-pointer font-mono text-[14px] transition-colors hover:text-accent ${
+                        isOpen ? "text-ink" : "text-muted"
                       }`}
                     >
-                      ▶
-                    </span>
-                    <span>{typeName}</span>
-                    <span className="text-[9.5px] opacity-55">
-                      {rows.length}
-                    </span>
-                  </div>
+                      <span
+                        className={`inline-block w-[7px] text-[9px] opacity-50 transition-transform duration-200 ${
+                          isOpen ? "rotate-90" : ""
+                        }`}
+                      >
+                        ▶
+                      </span>
+                      <span>{typeName}</span>
+                      <span className="text-[9.5px] opacity-55">
+                        {rows.length}
+                      </span>
+                    </div>
 
-                  {/* a gaveta: 0fr → 1fr é o que dá altura animável */}
-                  <div
-                    className={`grid transition-all duration-300 ease-out ${
-                      isOpen
-                        ? "grid-rows-[1fr] opacity-100"
-                        : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      {rows.map((c) => (
-                        <div
-                          key={c.id}
-                          onClick={() => setFocusedId(c.targetId)}
-                          className="group grid grid-cols-[94px_1fr] gap-4 items-baseline py-1.5 pl-0.5 border-l-2 border-transparent hover:border-accent transition-colors cursor-pointer"
-                        >
-                          <span className="font-mono text-muted text-[12px] opacity-70 text-right truncate">
-                            {c.label}
-                          </span>
-                          <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
-                            {c.name}
-                          </span>
-                        </div>
-                      ))}
+                    {/* a gaveta: 0fr → 1fr é o que dá altura animável */}
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        isOpen
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        {rows.map((c) => (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              setFocusedId(c.targetId);
+                              setArrivalGloss(c.gloss);
+                            }}
+                            className="group grid grid-cols-[94px_1fr] gap-4 items-baseline py-1.5 pl-0.5 border-l-2 border-transparent hover:border-accent transition-colors cursor-pointer"
+                          >
+                            <span className="font-mono text-muted text-[12px] opacity-70 text-right truncate">
+                              {c.label}
+                            </span>
+                            <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
+                              {c.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </section>
 
           {/* galeria */}

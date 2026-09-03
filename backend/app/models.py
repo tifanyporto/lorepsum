@@ -35,7 +35,8 @@ class Relationship(Base):
     id = Column(Integer, primary_key=True)        
     source_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
     target_id = Column(Integer, ForeignKey("entity.id", ondelete="CASCADE"), nullable=False)
-    label = Column(String)         
+    label = Column(String)      
+    gloss = Column(String)   
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     weight = Column(SmallInteger)
 
