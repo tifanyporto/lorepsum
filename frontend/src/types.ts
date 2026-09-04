@@ -3,6 +3,10 @@ type LogoProps = {
   muted?: boolean;
 };
 
+type WordmarkProps = {
+  className?: string;
+};
+
 type EntityType = {
   id: number;
   name: string;
@@ -31,4 +35,11 @@ type EntityImage = {
   description: string | null;
 };
 
-export type { LogoProps, Entity, Relationship, EntityType, EntityImage };
+export type {
+  LogoProps,
+  WordmarkProps,
+  Entity,
+  Relationship,
+  EntityType,
+  EntityImage,
+};

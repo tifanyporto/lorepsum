@@ -20,16 +20,15 @@ def list_entity_relationships(entity_id: int, db = Depends(get_db)):
 
 @router.post("/relationships", response_model=RelationshipRead)
 def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
+    if payload.source_id == payload.target_id:
+        raise HTTPException(status_code=422, detail="an entity cannot connect to itself")
     new_relationship = Relationship(label=payload.label, gloss=payload.gloss, target_id=payload.target_id, source_id=payload.source_id, weight=payload.weight)
     db.add(new_relationship)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-    if payload.weight <= 0:
-        raise HTTPException(status_code=409, detail="weight must have a value.")
-    if payload.target_id == payload.source_id:
-        raise HTTPException(status_code=409, detail="invalid link.")
+        raise HTTPException(status_code=409, detail="this relationship conflicts with an existing one") from err
     db.refresh(new_relationship)
     return new_relationship
 

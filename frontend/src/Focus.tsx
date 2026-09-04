@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { EntityType, Entity, Relationship, EntityImage } from "./types";
 import ThemeToggle from "./components/ThemeToggle";
 import Logo from "./components/Logo";
+import Wordmark from "./components/Wordmark";
 import Search from "./components/Search";
 import { API_URL } from "./api";
 import {
@@ -42,33 +43,41 @@ function Focus() {
   const [openTypes, setOpenTypes] = useState<string[]>([]);
   const [arrivalGloss, setArrivalGloss] = useState<string | null>(null);
 
+  const fetchJson = async (url: string) => {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return res.json();
+  };
   useEffect(() => {
-    fetch(`${API_URL}/entity-types`)
-      .then((res) => res.json())
-      .then((data) => setEntityTypes(data));
+    fetchJson(`${API_URL}/entity-types`)
+      .then((data) => setEntityTypes(data))
+      .catch((error) => console.error(error));
 
-    fetch(`${API_URL}/entities`)
-      .then((res) => res.json())
-      .then((data) => setEntiies(data));
+    fetchJson(`${API_URL}/entities`)
+      .then((data) => setEntiies(data))
+      .catch((error) => console.error(error));
 
-    fetch(`${API_URL}/relationships`)
-      .then((res) => res.json())
-      .then((data) => setAllRelationships(data));
+    fetchJson(`${API_URL}/relationships`)
+      .then((data) => setAllRelationships(data))
+      .catch((error) => console.error(error));
   }, []);
 
   useEffect(() => {
     if (focusedId === null) return;
-    fetch(`${API_URL}/entities/${focusedId}`)
-      .then((res) => res.json())
-      .then((data) => setEntity(data));
+    fetchJson(`${API_URL}/entities/${focusedId}`)
+      .then((data) => setEntity(data))
+      .catch((error) => console.error(error));
 
-    fetch(`${API_URL}/entities/${focusedId}/relationships`)
-      .then((res) => res.json())
-      .then((data) => setRelationships(data));
+    fetchJson(`${API_URL}/entities/${focusedId}/relationships`)
+      .then((data) => setRelationships(data))
+      .catch((error) => console.error(error));
 
-    fetch(`${API_URL}/entities/${focusedId}/images`)
-      .then((res) => res.json())
-      .then((data) => setEntityImages(data));
+    fetchJson(`${API_URL}/entities/${focusedId}/images`)
+      .then((data) => setEntityImages(data))
+      .catch((error) => console.error(error));
 
     setOpenTypes([]);
   }, [focusedId]);
@@ -160,16 +169,26 @@ function Focus() {
   return (
     <div className="h-screen flex flex-col bg-desk">
       <div className="flex items-center justify-between gap-3 p-4">
-        <Logo />
-        {
-          <Search
-            entities={entities}
-            onSelect={(id) => {
-              setFocusedId(id);
-              setArrivalGloss(null);
-            }}
-          />
-        }
+        {/* lockup: símbolo + wordmark, o símbolo na altura da caixa do texto */}
+        <a
+          href="/"
+          className="flex items-center gap-2.5 shrink-0"
+          aria-label="lorepsum"
+        >
+          <Logo className="w-10 h-10" />
+          <Wordmark />
+        </a>
+        <div className="w-full">
+          {
+            <Search
+              entities={entities}
+              onSelect={(id) => {
+                setFocusedId(id);
+                setArrivalGloss(null);
+              }}
+            />
+          }
+        </div>
         <ThemeToggle />
       </div>
       <div className="flex flex-1 min-h-0 max-h-[640px] my-auto w-full max-w-[1600px] mx-auto gap-3 px-8 pb-6 items-stretch">

@@ -24,6 +24,7 @@
 - **Acervo de teste:** 117 entidades e 218 relações do universo DC (6 tipos), semeadas pela API.
 - **Estado vazio das conexões:** entidade sem nenhuma conexão de saída mostra "there are no connections yet." — e o `expand all` some, porque botão que não tem o que expandir não deve existir.
 - **Glosa na aresta (2026-09-02):** coluna `gloss` em `relationship` (opcional) + schemas + o front escolhendo `arrivalGloss ?? entity.description`. As três portas que trocam o foco — lista de conexões, nó da constelação e busca — respondem cada uma sobre a chegada. Decisões em `design.md`.
+- **`create_relationship` honesto (2026-09-02):** a faixa do `weight` virou `Field(ge=1, le=3)` no schema — 422 apontando o campo, em vez de 500 ou de um 409 genérico. O `source == target` subiu pra primeira linha, e o `IntegrityError` deixou de ser engolido: `rollback` + 409 encadeado com `from err`. Seis rotas de erro testadas contra o servidor.
 - **`types.ts` honesto:** `label`, `gloss` e as duas `description` passaram a `string | null`, como os schemas do backend sempre disseram. O TypeScript voltou a proteger o que devia.
 - **Infra:** servidor soberano (postmarketOS + Postgres 18 + Tailscale), reboot-proof.
 - **Design:** marca (símbolo, wordmark, paleta, fontes) + **landing** + **fluxo de onboarding conversacional** DEFINIDOS (`docs/design/`).
@@ -42,7 +43,6 @@
 ## ⏭️ Próximo (fundação que falta)
 
 - **CRUD do zero, sobre design novo.** O `App.tsx` (a "pele de aprendizado": lista, cria, edita e deleta entidades) **foi removido** em 2026-09-02 — não era mais renderizado, e continuava sendo compilado e quebrando por mudanças alheias. Criar, editar e apagar entidades e conexões volta como **feature desenhada**, não como formulário de teste. A mecânica antiga (`POST`/`PATCH`/`DELETE` do front, formulário controlado) fica recuperável em `git show <commit>:frontend/src/App.tsx`.
-- **Validação de `weight` na borda (Pydantic) + erros mais honestos no `create_relationship`** — hoje `weight: 0` viola o CHECK do banco e vira **409 "invalid link."**, a mesma mensagem usada pra FK inválida, `source == target` e duplicada. A faixa 1–3 devia ser recusada pelo schema (**422**, apontando o campo), e o 409 ficar só pro caso de conflito de verdade.
 
 ## 🌱 Depois (features — cada uma espera sua fundação)
 
@@ -58,6 +58,18 @@
 - **Descoberta indireta** (caminhos entre entidades — fase 5).
 - **Coleções / timeline** (fase 7).
 - **Auth + "reivindicar a lore" no cadastro + deploy** (fase 9).
+
+## 🖥️ Depois do web — clientes nativos (decidido 2026-09-02)
+
+> **Sem webview, sem Electron.** O que torna isto possível já está feito: o backend é uma **API HTTP**, e cada cliente novo é só mais alguém falando com ela. O que **não** se reaproveita é o frontend — React, Tailwind, SVG e as transições CSS não existem fora do navegador. Cores, tipografia e as decisões de design portam; a mecânica não.
+
+- **Windows — `C# + WPF`.** A estrada nativa do Windows. C# é o encontro do que ela já tem (tipagem do TypeScript + orientação a objetos do Python), e a profundidade de documentação do WPF é o argumento decisivo pra quem aprende sozinha. XAML é declarativo como o JSX; *data binding* é o state que redesenha a tela; MVVM é a separação que ela já pratica. *(Irmão pra Mac/Linux, se um dia quiser: **Avalonia** — mesma linguagem, XAML quase idêntico, renderiza com Skia.)*
+- **Android — `Kotlin + Jetpack Compose`.** Nativo, sem runtime de JS. E **Compose é o React em Kotlin**: `@Composable` é componente, `remember { mutableStateOf(…) }` é `useState`, *recomposition* é re-render — o paradigma já é conhecido, muda só o sotaque.
+- **iOS — `Flutter`** *(escolha dela)*. Compila pra binário nativo e desenha com Skia. ⚠️ **Ainda exige macOS pra compilar e publicar** — o Xcode não roda em Windows, e isso vale pra qualquer framework. Caminhos: Mac alugado na nuvem (~US$30–80/mês), runner macOS no CI (serve pra publicar, não pra desenhar interface), ou um Mac mini usado num canto. **É o último da fila**, porque é a única plataforma que cobra antes da primeira linha.
+
+**Em todos:** a Constelação é redesenhada num canvas com GPU (`SkiaSharp` no WPF, `Canvas` composable no Compose, `CustomPainter` no Flutter), e a simulação de forças é reimplementada — repulsão entre pares + molas nas arestas + N iterações, que é o que o d3-force faz por baixo.
+
+**Consequência pro web:** como o celular vai ser app nativo, o app web **não precisa fingir ser um app de celular**. O responsivo volta a ser acabamento da tela grande, não fundação da expansão.
 
 ## 🐘 Quando o acervo crescer
 

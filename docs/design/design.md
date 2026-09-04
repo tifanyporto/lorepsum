@@ -92,7 +92,7 @@ Fontes: `Fraunces` (serif) · `IBM Plex Mono` (mono) — via Google Fonts.
 ### Marca — símbolo + wordmark (FECHADA 2026-08-13)
 
 - **Símbolo (logomark):** o "**nó-eu no centro**" — um nó central **sólido** (cor de tinta, que **inverte por modo**: preto no claro, branco no escuro) irradiando **4 conexões** a nós menores, com **uma aresta em roxo** (a conexão forte). Mesmo mark serve favicon / ícone de app. Coerente com o nó-eu das telas. Ref.: [`docs/brand-logo.html`](./brand-logo.html).
-- **Wordmark (logotipo):** `lorepsum.` em **IBM Plex Mono, peso 500, minúsculo, tracking apertado (~-0.02em)**, com **ponto roxo** final. O ponto usa o acento (ameixa `#6b4e96` no claro, lavanda `#ad8bd4` no escuro). Ref.: [`docs/brand-wordmark.html`](./brand-wordmark.html).
+- ~~**Wordmark (logotipo):** `lorepsum.` em IBM Plex Mono, peso 500, minúsculo, tracking apertado, com ponto roxo final.~~ — **REFEITO em 2026-09-02**, ver o bloco de rebranding no fim deste documento.
 - **Lockup:** símbolo + wordmark lado a lado (símbolo ≈ altura da caixa do texto).
 
 ---
@@ -362,3 +362,34 @@ Daí a regra que organiza o front:
 São três portas: a lista `connections` (sempre tem aresta), o nó da constelação (tem se for vizinho, `null` se não) e a busca (sempre `null`). Deixar qualquer uma calada faz a glosa anterior grudar numa entidade que não tem nada a ver com ela — foi o bug que apareceu no teste.
 
 Continua valendo o limite do sentido: a busca no grafo só encontra glosa quando a aresta **sai** do foco. Quando as conexões de **entrada** aparecerem no Foco, isso volta à mesa junto com a questão dos dois sentidos.
+
+---
+
+## Decisão (2026-09-02, parte 3) — REBRANDING do wordmark
+
+> Mockup: [`wordmark-mockup.html`](./wordmark-mockup.html) — doze tratamentos, cada um em 18px / 34px / 64px, mais a topbar real no fim (que é onde a decisão se toma, porque é onde a marca vive 99% do tempo).
+
+**O wordmark passa a destacar `lore`.** A palavra `lorepsum` é `lore` + `ipsum`: uma metade é a coisa de verdade, a outra é o texto de encher. Até aqui a marca tratava as duas igual.
+
+```
+lore  →  Fraunces, display (SOFT 60, WONK 1), peso 600, roxo
+psum  →  Fraunces, mesmo corte, tinta
+.     →  roxo
+```
+
+**Sai o IBM Plex Mono.** Ele é, no sistema, a fonte de **etiqueta** — a marca estava vestida de *chrome de interface* em vez de nome próprio. Em Fraunces ela passa a falar com a mesma voz dos nomes de entidade.
+
+**Modo display, não texto.** A Fraunces é variável: `SOFT` arredonda os cantos e `WONK` solta as formas mais características. Isso rende em tamanho grande (landing) e some em 18px — e é aceitável: na topbar o que identifica é o símbolo ao lado, não o *wonk*.
+
+**O ponto continua roxo, e agora ele tem companhia.** Com `lore` roxo e o ponto roxo, o acento **abre e fecha** a palavra, e a tinta fica no meio. Isso parece contrariar a regra do *"roxo é um acento só"* — e a distinção que a mantém válida é: a regra existe pra impedir **roxo espalhado pela tela**. Dois acentos emoldurando a mesma palavra funcionam como um par, não como dois pontos soltos. Fora do wordmark, a regra segue intacta.
+
+### Descartados (e por quê, pra não voltarem por engano)
+
+- **`lore` roxo com o ponto em tinta** — respeitava a regra ao pé da letra, mas o roxo sozinho na frente desequilibra: a palavra fica pesada à esquerda.
+- **`psum` no cinza apagado** — mais leve e bonito no claro, mas o `--color-muted` foi calibrado pra texto pequeno de apoio; num display de 64px ele lava, principalmente no escuro. Se um dia for retomado, precisa de um cinza próprio, com token e nome.
+- **Só peso, sem cor** — funcionava, mas não resolvia o pedido: `lore` não chegava a existir como palavra.
+- **Tudo em Fraunces sem distinção** — ganhava voz e perdia a piada; o `psum` deixava de parecer placeholder.
+
+### O símbolo — correção de fidelidade
+
+Auditoria do mesmo dia: **os mockups vinham desenhando o símbolo com 3 arestas**, e a marca tem **4** (`brand-logo.html` e o `Logo.tsx` do app sempre estiveram certos). O núcleo também aparecia com `r=5`, quando o canônico é `5.6`. Corrigido em cinco arquivos. **O `Logo.tsx` é a referência viva** — mockup que divergir dele está errado, não o contrário.

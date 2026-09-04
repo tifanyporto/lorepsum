@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 class EntityTypeCreate(BaseModel):
     name: str
@@ -55,7 +55,7 @@ class RelationshipCreate(BaseModel):
     target_id: int
     label: str | None = None
     gloss: str | None = None
-    weight: int | None = None
+    weight: int | None = Field(default=None, ge=1, le=3)
 
 class RelationshipRead(BaseModel):
     id: int
@@ -72,4 +72,4 @@ class RelationshipUpdate(BaseModel):
     target_id: int | None = None
     label: str | None = None
     gloss: str | None = None
-    weight: int  | None = None
+    weight: int | None = Field(default=None, ge=1, le=3)
