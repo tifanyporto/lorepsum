@@ -77,12 +77,17 @@
 
 - **`GET /entities/{id}/neighborhood?depth=`** — evita baixar o grafo inteiro pra desenhar 25 nós. Enquanto o acervo é pequeno, `/entities` + `/relationships` resolvem, e a profundidade é calculada no front.
 
+## 📦 No dia do deploy
+
+- **`apple-touch-icon` + `manifest.json`** — o favicon SVG resolve a aba do navegador, mas iPhone e Android querem **PNG** (180×180 pro Apple, 192 e 512 pro manifest) pra ícone de tela inicial. O SVG da marca é a fonte; os PNGs são exportações dele.
+- **`API_URL` por variável de ambiente do Vite**, não constante no código.
+- **Barrar arquivo grande antes do tráfego** — o 413 de hoje impede a **gravação**, mas o arquivo já chegou inteiro. Barrar antes é camada de servidor.
+
 ## 🔒 Quando houver usuários que eu não conheço
 
 > Guardas que hoje seriam desperdício (o "inimigo" é engano meu, não má-fé alheia), mas que passam a ser obrigatórios no dia do deploy público.
 
 - **Validar imagem pela assinatura do arquivo** (*magic bytes*) — ler os primeiros bytes e conferir o carimbo do formato (`FF D8 FF` = JPEG, `%PDF` = PDF), em vez de confiar no `content_type`, que quem envia **declara** e portanto pode forjar. Lembrar do `seek(0)` depois de espiar, senão o arquivo é gravado sem o próprio cabeçalho. Provavelmente via biblioteca (a `Pillow` **abre** a imagem — se abre, é imagem de verdade, não só um cabeçalho falsificado).
-- **Barrar arquivo grande antes do tráfego** — o 413 de hoje impede que ele seja **gravado**, mas o arquivo já chegou inteiro. Barrar antes é camada de servidor (deploy).
 
 ## 💡 Ideias (brain-dump — sem compromisso, sem ordem)
 
