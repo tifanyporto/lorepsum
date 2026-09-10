@@ -3,6 +3,7 @@ from app.database import get_db
 from app.models import Relationship, Entity
 from app.schemas import RelationshipCreate, RelationshipRead, RelationshipUpdate
 from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
 
 
 
@@ -28,6 +29,10 @@ def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
         db.commit()
     except IntegrityError as err:
         db.rollback()
+        # o Postgres carimba cada violacao com um codigo: FK invalida e culpa de
+        # quem mandou o id (422), duplicata e conflito com o que ja existe (409)
+        if err.orig.pgcode == errorcodes.FOREIGN_KEY_VIOLATION:
+            raise HTTPException(status_code=422, detail="source_id or target_id does not exist") from err
         raise HTTPException(status_code=409, detail="this relationship conflicts with an existing one") from err
     db.refresh(new_relationship)
     return new_relationship

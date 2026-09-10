@@ -44,9 +44,9 @@ def upload_image(entity_id: int, file: UploadFile = File(...), cover: bool = For
     db.add(new_image)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=409, detail="this entity already has a cover")
+        raise HTTPException(status_code=409, detail="this entity already has a cover") from err
 
     data = file.file.read()
     with open(f"media/{path}", "wb") as target:

@@ -19,13 +19,9 @@ def create_entity(payload: EntityCreate, db=Depends(get_db)):
     db.add(new_entity)
     try:
         db.commit()
-    except IntegrityError:
-        if payload.entity_type_id is None:
-            db.rollback()
-            raise HTTPException(status_code=500, detail="invalid entity_type_id")
-        if payload.name is None:
-            db.rollback()
-            raise HTTPException(status_code=500, detail="invalid name")
+    except IntegrityError as err:
+        db.rollback()
+        raise HTTPException(status_code=422, detail="invalid entity_type_id") from err
     db.refresh(new_entity)
     return new_entity
 
@@ -63,8 +59,8 @@ def update_entity(entity_id: int, payload: EntityUpdate, db = Depends(get_db)):
         setattr(entity, field, value)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=500, detail="invalid entity_type_id")
+        raise HTTPException(status_code=500, detail="invalid entity_type_id") from err
     db.refresh(entity)
     return entity

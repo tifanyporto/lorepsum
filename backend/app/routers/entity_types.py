@@ -18,9 +18,9 @@ def create_entity_type(payload: EntityTypeCreate, db=Depends(get_db)):
     db.add(new_type)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=409, detail="this name already exists.")
+        raise HTTPException(status_code=409, detail="this name already exists.") from err
     db.refresh(new_type)
     return new_type
 
@@ -51,8 +51,8 @@ def update_entity_type(type_id: int, payload: EntityTypeUpdate, db = Depends(get
         setattr(entity_type, field, value)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=409, detail="this name already exists.")
+        raise HTTPException(status_code=409, detail="this name already exists.") from err
     db.refresh(entity_type)
     return entity_type
