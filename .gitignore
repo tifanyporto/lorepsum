@@ -5,3 +5,8 @@ __pycache__/
 /test
 /node_modules
 /backend/media
+# arquivos de apoio — pessoais, não fazem parte do projeto publicado
+/learning.md
+/docs/colinha-backend.md
+/docs/colinha-frontend.md
+/HANDOFF.md
