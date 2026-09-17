@@ -195,7 +195,7 @@ function Focus() {
         <div className="relative flex-1 min-w-0 overflow-hidden rounded-xl border border-line bg-canvas">
           <svg
             ref={svgRef}
-            className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none"
+            className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
             onPointerDown={(e) =>
               setDragStart({
                 pointerX: e.clientX,
