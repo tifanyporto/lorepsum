@@ -35,6 +35,7 @@ class Entity(Base):
     description = Column(String)
     entity_type_id = Column(Integer, ForeignKey("entity_types.id"), nullable=False)
     attributes = Column(JSONB, nullable=False, default=dict)
+    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     archived_at = Column(DateTime(timezone=True), nullable=True)
