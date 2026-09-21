@@ -29,8 +29,8 @@ def create_relationship(payload: RelationshipCreate, db=Depends(get_db)):
         db.commit()
     except IntegrityError as err:
         db.rollback()
-        # o Postgres carimba cada violacao com um codigo: FK invalida e culpa de
-        # quem mandou o id (422), duplicata e conflito com o que ja existe (409)
+        # Postgres stamps every violation with a code: a bad foreign key is the
+        # caller's fault (422), a duplicate conflicts with what exists (409)
         if err.orig.pgcode == errorcodes.FOREIGN_KEY_VIOLATION:
             raise HTTPException(status_code=422, detail="source_id or target_id does not exist") from err
         raise HTTPException(status_code=409, detail="this relationship conflicts with an existing one") from err

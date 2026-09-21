@@ -4,11 +4,11 @@ Revision ID: a1f3c9d2b704
 Revises: 6c2c163a7084
 Create Date: 2026-09-03 15:02:11.000000
 
-Escrita à mão: o --autogenerate não enxerga renomeação. Ele veria a tabela
-antiga sumir e uma nova aparecer, e escreveria drop_table + create_table —
-o que apagaria os dados. rename_table preserva tudo, e o Postgres carrega
-as chaves estrangeiras junto (elas apontam pro identificador interno da
-tabela, não pro nome).
+Written by hand: --autogenerate cannot see a rename. It would see the old
+table disappear and a new one appear, and write drop_table + create_table,
+destroying the data. rename_table preserves everything, and Postgres carries
+the foreign keys along with it (they point at the table's internal id, not
+at its name).
 
 """
 from typing import Sequence, Union
@@ -30,8 +30,8 @@ TABLES = [
     ("entity_image", "entity_images"),
 ]
 
-# os índices declarados no models.py levam o nome da tabela; renomear a
-# tabela não renomeia o índice, então isso é feito à parte
+# indexes declared in models.py carry the table name; renaming a table does
+# not rename its indexes, so that is done separately
 INDEXES = [
     ("ix_relationship_source", "ix_relationships_source"),
     ("ix_relationship_target", "ix_relationships_target"),

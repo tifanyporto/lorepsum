@@ -30,6 +30,15 @@ def create_user(payload: UserCreate, db = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+@router.get("/users/me", response_model=UserRead)
+def get_current_user(db = Depends(get_db)):
+        # temporary. becomes a session read once login exists (#14)
+    current_user = db.query(User).filter(User.name == "dev").first()
+    if current_user is None:
+        raise HTTPException(status_code=404, detail="user not found")
+    return current_user
+
+
 @router.get("/users/{user_id}", response_model=UserRead)
 def get_user(user_id: UUID, db = Depends(get_db)):
     user = db.get(User, user_id)
@@ -63,3 +72,6 @@ def delete_user(user_id: UUID, hard: bool = False, db = Depends(get_db)):
         user.archived_at = datetime.now(timezone.utc)
     db.commit()
     return
+
+
+    

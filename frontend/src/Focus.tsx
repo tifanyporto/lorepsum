@@ -39,7 +39,7 @@ function Focus() {
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphLinks, setGraphLinks] = useState<PositionedLink[]>([]);
   const [boxSize, setBoxSize] = useState({ width: 0, height: 0 });
-  // quais tipos de conexão estão abertos no painel de leitura
+  // which connection types are expanded in the reading panel
   const [openTypes, setOpenTypes] = useState<string[]>([]);
   const [arrivalGloss, setArrivalGloss] = useState<string | null>(null);
 
@@ -82,28 +82,28 @@ function Focus() {
     setOpenTypes([]);
   }, [focusedId]);
   useEffect(() => {
-    // o <svg>
+    // the <svg>
     const el = svgRef.current;
     if (el === null) return;
-    // o que fazer quando a roda do mouse girar sobre o SVG
+    // what to do when the mouse wheel turns over the SVG
     const handleWheel = (e: WheelEvent) => {
-      // cancela a rolagem da página, só funciona porque o ouvinte não é passivo
+      // cancels the page scroll; only works because the listener is not passive
       e.preventDefault();
-      // pra cima aproxima, pra baixo afasta; preso entre 0.4 e 2.5
+      // up zooms in, down zooms out; clamped between 0.4 and 2.5
       setZoom(
         Math.min(2.5, Math.max(0.4, e.deltaY < 0 ? zoom * 1.1 : zoom / 1.1)),
       );
     };
-    // registra na mão, avisando que este ouvinte PODE cancelar o evento
+    // registered by hand, declaring that this listener MAY cancel the event
     el.addEventListener("wheel", handleWheel, { passive: false });
-    // limpeza: tira este ouvinte antes de registrar o próximo
+    // cleanup: remove this listener before the next one is registered
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoom]);
 
   useEffect(() => {
     const el = svgRef.current;
     if (el === null) return;
-    // avisa toda vez que o elemento muda de tamanho (inclusive na primeira medida)
+    // fires whenever the element is resized, including the first measurement
     const observer = new ResizeObserver(() => {
       const box = el.getBoundingClientRect();
       setBoxSize({ width: box.width, height: box.height });
@@ -145,7 +145,7 @@ function Focus() {
   const gallery = entityImages.filter((g) => !g.cover);
   const thumbnailGallery = gallery.slice(0, 5);
   const remainingPhoto = gallery.length - thumbnailGallery.length;
-  // cada conexão já resolvida: nome do destino e nome do tipo dele
+  // each connection already resolved: the target's name and its type name
   const connections = relationships.map((r) => {
     const target = entities.find((e) => e.id === r.target_id);
     const targetType = entityTypes.find((t) => t.id === target?.entity_type_id);
@@ -158,9 +158,9 @@ function Focus() {
       typeName: targetType?.name ?? "others",
     };
   });
-  // os tipos presentes nessas conexões, sem repetir
+  // the types present in those connections, deduplicated
   const connectionTypes = [...new Set(connections.map((c) => c.typeName))];
-  // quem encosta na entidade em foco — decide quem mostra o nome sem hover
+  // who touches the focused entity — decides who shows a name without hover
   const neighborIds = new Set<number>();
   graphLinks.forEach((l) => {
     if (l.source.id === focusedId) neighborIds.add(l.target.id);
@@ -169,7 +169,7 @@ function Focus() {
   return (
     <div className="h-screen flex flex-col bg-desk">
       <div className="flex items-center justify-between gap-3 p-4">
-        {/* lockup: símbolo + wordmark, o símbolo na altura da caixa do texto */}
+        {/* lockup: symbol + wordmark, the symbol matching the text box height */}
         <a
           href="/"
           className="flex items-center gap-2.5 shrink-0"
@@ -326,7 +326,7 @@ function Focus() {
           </svg>
         </div>
         <div className="basis-[450px] grow-0 shrink min-w-0 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
-          {/* cabeçalho: capa + identificação */}
+          {/* header: cover + identity */}
           <div className="flex gap-[18px] items-start">
             <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
               {coverImage ? (
@@ -354,7 +354,7 @@ function Focus() {
             </div>
           </div>
 
-          {/* conexões, agrupadas por tipo */}
+          {/* connections, grouped by type */}
           <section className="mt-7">
             <div className="flex items-center gap-2.5 mb-[18px]">
               <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
@@ -417,7 +417,7 @@ function Focus() {
                       </span>
                     </div>
 
-                    {/* a gaveta: 0fr → 1fr é o que dá altura animável */}
+                    {/* the drawer: 0fr -> 1fr is what makes the height animatable */}
                     <div
                       className={`grid transition-all duration-300 ease-out ${
                         isOpen
@@ -451,7 +451,7 @@ function Focus() {
             )}
           </section>
 
-          {/* galeria */}
+          {/* gallery */}
           {gallery.length > 0 && (
             <section className="mt-[30px]">
               <div className="flex items-center gap-2.5 mb-[18px]">

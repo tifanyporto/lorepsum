@@ -5,14 +5,14 @@ from pydantic import BaseModel, ConfigDict, Field
 class UserCreate(BaseModel):
     name: str
     email: str
-    # sem autenticação ainda: aceita nulo para que o usuário `dev` possa nascer
-    # sem senha. Quando o cadastro existir, isto vira `password: str` e o hash
-    # passa a ser feito aqui dentro, nunca recebido pronto de fora.
+    # no auth yet, so this is nullable and the `dev` user can exist without a
+    # password. Once sign-up exists it becomes `password: str` and the hash is
+    # computed in here, never received ready-made from outside.
     password_hash: str | None = None
     self_entity_id: int | None = None
 
-# o hash NÃO aparece aqui: schema de leitura é o que sai pela rede, e o hash
-# é justamente a única coisa que nunca deve sair
+
+# the hash is absent on purpose: this is what goes out over the wire
 class UserRead(BaseModel):
     id: UUID
     name: str

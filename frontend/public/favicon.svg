@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <style>
-    /* O favicon vive FORA do app: não alcança as variáveis do index.css.
-       As cores da paleta entram aqui em hex, e o modo escuro segue a
-       preferência do SISTEMA — não o botão de tema da interface. */
+    /* The favicon lives OUTSIDE the app: it cannot reach the variables in
+       index.css. Palette colours are written here as hex, and dark mode
+       follows the SYSTEM preference, not the theme toggle in the UI. */
     .ink    { stroke: #26231d; fill: #26231d; }
     .accent { stroke: #6b4e96; fill: #6b4e96; }
     @media (prefers-color-scheme: dark) {

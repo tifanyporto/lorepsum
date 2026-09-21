@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --color-desk: #e6dfce; /* mesa — fundo externo */
-  --color-canvas: #f6f2e9; /* tela */
-  --color-ink: #26231d; /* tinta — texto */
-  --color-muted: #8a8072; /* apagado */
-  --color-line: #d7cebc; /* linha fina */
-  --color-accent: #6b4e96; /* roxo — ameixa */
+  --color-desk: #e6dfce; /* desk — outer background */
+  --color-canvas: #f6f2e9; /* canvas */
+  --color-ink: #26231d; /* ink — text */
+  --color-muted: #8a8072; /* muted */
+  --color-line: #d7cebc; /* hairline */
+  --color-accent: #6b4e96; /* accent — plum */
   --color-beyond: #4c6e94;
 
   --font-serif: "Fraunces", Georgia, serif;
@@ -52,7 +52,7 @@
   }
 }
 
-/* barra de rolagem fina, no roxo */
+/* thin scrollbar, in the accent */
 .scrollbar-accent {
   scrollbar-width: thin;
   scrollbar-color: var(--color-accent) transparent;

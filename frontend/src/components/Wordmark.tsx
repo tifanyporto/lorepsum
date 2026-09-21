@@ -1,9 +1,9 @@
 import type { WordmarkProps } from "../types";
 
-// A marca: `lore` em roxo, `psum` em tinta, ponto roxo.
-// Fraunces em modo display — SOFT arredonda os cantos, WONK solta as formas
-// mais características dela. Rende em tamanho grande e some em 18px, o que é
-// aceitável: na topbar quem identifica é o símbolo ao lado.
+// The mark: `lore` in accent, `psum` in ink, accent dot.
+// Fraunces in display mode — SOFT rounds the corners, WONK lets its most
+// characteristic shapes loose. It pays off at large sizes and disappears at
+// 18px, which is fine: in the topbar the symbol beside it does the identifying.
 function Wordmark({ className = "text-[19px]" }: WordmarkProps) {
   return (
     <span
