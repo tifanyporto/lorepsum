@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import type { EntityType, Entity, Relationship, EntityImage } from "./types";
+import type {
+  User,
+  EntityType,
+  Entity,
+  Relationship,
+  EntityImage,
+} from "./types";
 import ThemeToggle from "./components/ThemeToggle";
 import Logo from "./components/Logo";
 import Wordmark from "./components/Wordmark";
@@ -19,6 +25,7 @@ type GraphLink = SimulationLinkDatum<GraphNode>;
 type PositionedLink = { source: GraphNode; target: GraphNode };
 
 function Focus() {
+  const [user, setUser] = useState<User>();
   const [entityTypes, setEntityTypes] = useState<EntityType[]>([]);
   const [entity, setEntity] = useState<Entity>();
   const [entities, setEntiies] = useState<Entity[]>([]);
@@ -52,6 +59,12 @@ function Focus() {
     return res.json();
   };
   useEffect(() => {
+    fetchJson(`${API_URL}/users/me`)
+      .then((data) => {
+        setUser(data);
+        setFocusedId(data.self_entity_id);
+      })
+      .catch((error) => console.error(error));
     fetchJson(`${API_URL}/entity-types`)
       .then((data) => setEntityTypes(data))
       .catch((error) => console.error(error));
@@ -113,9 +126,14 @@ function Focus() {
   }, []);
 
   useEffect(() => {
-    const nodes: GraphNode[] = entities.map((e) => {
-      return { id: e.id, name: e.name };
-    });
+    // the you-node is drawn apart, pinned at the origin, so it stays out of
+    // the simulation. Edges touching it fall away on their own: the link
+    // filter below only keeps edges whose both ends are in this list.
+    const nodes: GraphNode[] = entities
+      .filter((e) => e.id !== user?.self_entity_id)
+      .map((e) => {
+        return { id: e.id, name: e.name };
+      });
 
     const nodeIds = new Set(nodes.map((node) => node.id));
     const links: GraphLink[] = allRelationships
@@ -137,7 +155,7 @@ function Focus() {
     simulation.tick(300);
     setGraphNodes(nodes);
     setGraphLinks(links as unknown as PositionedLink[]);
-  }, [entities, allRelationships]);
+  }, [entities, allRelationships, user]);
 
   const type = entityTypes.find((t) => t.id === entity?.entity_type_id);
   const coverImage = entityImages.find((i) => i.cover);
@@ -167,8 +185,8 @@ function Focus() {
     if (l.target.id === focusedId) neighborIds.add(l.source.id);
   });
   return (
-    <div className="h-screen flex flex-col bg-desk">
-      <div className="flex items-center justify-between gap-3 p-4">
+    <div className="h-screen relative overflow-hidden bg-desk">
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none [&>*]:pointer-events-auto">
         {/* lockup: symbol + wordmark, the symbol matching the text box height */}
         <a
           href="/"
@@ -191,8 +209,7 @@ function Focus() {
         </div>
         <ThemeToggle />
       </div>
-      <div className="flex flex-1 min-h-0 max-h-[640px] my-auto w-full max-w-[1600px] mx-auto gap-3 px-8 pb-6 items-stretch">
-        <div className="relative flex-1 min-w-0 overflow-hidden rounded-xl border border-line bg-canvas">
+      <div className="absolute inset-0">
           <svg
             ref={svgRef}
             className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
@@ -322,10 +339,54 @@ function Focus() {
                   </g>
                 );
               })}
+
+              {/* the you-node: pinned at the origin, outside the simulation.
+                  Placeholder shape until #6 decides what it looks like. */}
+              {user?.self_entity_id != null && (
+                <g
+                  onClick={() => {
+                    setFocusedId(user.self_entity_id);
+                    setArrivalGloss(null);
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  className="cursor-pointer"
+                >
+                  {focusedId === user.self_entity_id && (
+                    <circle
+                      r={12}
+                      fill="none"
+                      stroke="var(--color-accent)"
+                      strokeWidth={1.4}
+                      className="pulse-ring"
+                    />
+                  )}
+                  <circle
+                    r={27}
+                    fill="none"
+                    stroke={
+                      focusedId === user.self_entity_id
+                        ? "var(--color-accent)"
+                        : "var(--color-line)"
+                    }
+                    strokeWidth={1}
+                    className="transition-all duration-300"
+                  />
+                  <circle
+                    r={12}
+                    fill={
+                      focusedId === user.self_entity_id
+                        ? "var(--color-accent)"
+                        : "var(--color-ink)"
+                    }
+                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
+                    className="transition-all duration-300"
+                  />
+                </g>
+              )}
             </g>
           </svg>
-        </div>
-        <div className="basis-[450px] grow-0 shrink min-w-0 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      </div>
+      <div className="absolute top-[68px] right-5 bottom-5 z-10 w-[420px] overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
           {/* header: cover + identity */}
           <div className="flex gap-[18px] items-start">
             <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
@@ -485,7 +546,6 @@ function Focus() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 export default Focus;

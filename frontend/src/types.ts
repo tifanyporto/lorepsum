@@ -7,6 +7,12 @@ type WordmarkProps = {
   className?: string;
 };
 
+type User = {
+  id: string;
+  name: string;
+  self_entity_id: number | null;
+};
+
 type EntityType = {
   id: number;
   name: string;
@@ -38,6 +44,7 @@ type EntityImage = {
 export type {
   LogoProps,
   WordmarkProps,
+  User,
   Entity,
   Relationship,
   EntityType,
