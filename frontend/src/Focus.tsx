@@ -360,25 +360,38 @@ function Focus() {
                       className="pulse-ring"
                     />
                   )}
-                  <circle
-                    r={27}
+                  {/* two open arcs instead of a closed ring: the gaps let the
+                      real edges pass through, so the shape never strangles a
+                      connection the way a full circle would */}
+                  <g
                     fill="none"
                     stroke={
                       focusedId === user.self_entity_id
                         ? "var(--color-accent)"
                         : "var(--color-line)"
                     }
-                    strokeWidth={1}
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeOpacity={0.8}
                     className="transition-all duration-300"
-                  />
-                  <circle
-                    r={12}
+                  >
+                    <path d="M -24 -12 A 27 27 0 0 1 24 -12" />
+                    <path d="M 24 12 A 27 27 0 0 1 -24 12" />
+                  </g>
+                  {/* the core is a diamond, never a dot — it must not read as
+                      one more node among the others */}
+                  <rect
+                    x={-6}
+                    y={-6}
+                    width={12}
+                    height={12}
+                    transform="rotate(45)"
                     fill={
                       focusedId === user.self_entity_id
                         ? "var(--color-accent)"
                         : "var(--color-ink)"
                     }
-                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
+                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.8}
                     className="transition-all duration-300"
                   />
                 </g>
