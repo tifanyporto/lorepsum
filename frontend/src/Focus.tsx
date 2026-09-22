@@ -249,7 +249,7 @@ function Focus() {
                     x2={l.target.x}
                     y2={l.target.y}
                     stroke={
-                      touchesFocus ? "var(--color-accent)" : "var(--color-ink)"
+                      touchesFocus ? "var(--color-here)" : "var(--color-ink)"
                     }
                     strokeOpacity={
                       touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.16
@@ -260,6 +260,35 @@ function Focus() {
                   />
                 );
               })}
+              {/* the you-node's own edges. They are drawn apart because the
+                  you-node is not in the simulation, so the link filter above
+                  never sees them. Each one starts at radius 27 — on the arcs —
+                  instead of at the centre, so it leaves through the side gaps
+                  rather than cutting across the shape. */}
+              {user?.self_entity_id != null &&
+                allRelationships
+                  .filter((r) => r.source_id === user.self_entity_id)
+                  .map((r) => {
+                    const target = graphNodes.find((n) => n.id === r.target_id);
+                    if (target?.x == null || target.y == null) return null;
+                    // walk 27 along the direction of the target
+                    const distance = Math.hypot(target.x, target.y);
+                    const start = 27 / distance;
+                    const isFocused = focusedId === user.self_entity_id;
+                    return (
+                      <line
+                        key={`me-${r.id}`}
+                        x1={target.x * start}
+                        y1={target.y * start}
+                        x2={target.x}
+                        y2={target.y}
+                        stroke="var(--color-accent)"
+                        strokeWidth={isFocused ? 1.4 : 1.1}
+                        strokeOpacity={isFocused ? 0.7 : 0.3}
+                        className="transition-all duration-300"
+                      />
+                    );
+                  })}
               {graphNodes.map((n) => {
                 const isFocused = n.id === focusedId;
                 const isNeighbor = neighborIds.has(n.id);
@@ -279,7 +308,7 @@ function Focus() {
                           cy={n.y}
                           r={r}
                           fill="none"
-                          stroke="var(--color-accent)"
+                          stroke="var(--color-here)"
                           strokeWidth={1.4}
                           className="pulse-ring"
                         />
@@ -288,7 +317,7 @@ function Focus() {
                           cy={n.y}
                           r={r}
                           fill="none"
-                          stroke="var(--color-accent)"
+                          stroke="var(--color-here)"
                           strokeWidth={1.4}
                           className="pulse-ring"
                           style={{ animationDelay: "1.3s" }}
@@ -301,7 +330,7 @@ function Focus() {
                       r={r}
                       fill={
                         isFocused || isHovered
-                          ? "var(--color-accent)"
+                          ? "var(--color-here)"
                           : "var(--color-ink)"
                       }
                       fillOpacity={
@@ -365,14 +394,12 @@ function Focus() {
                       connection the way a full circle would */}
                   <g
                     fill="none"
-                    stroke={
-                      focusedId === user.self_entity_id
-                        ? "var(--color-accent)"
-                        : "var(--color-line)"
-                    }
+                    stroke="var(--color-accent)"
                     strokeWidth={1.5}
                     strokeLinecap="round"
-                    strokeOpacity={0.8}
+                    strokeOpacity={
+                      focusedId === user.self_entity_id ? 0.9 : 0.55
+                    }
                     className="transition-all duration-300"
                   >
                     <path d="M -24 -12 A 27 27 0 0 1 24 -12" />
@@ -386,12 +413,8 @@ function Focus() {
                     width={12}
                     height={12}
                     transform="rotate(45)"
-                    fill={
-                      focusedId === user.self_entity_id
-                        ? "var(--color-accent)"
-                        : "var(--color-ink)"
-                    }
-                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.8}
+                    fill="var(--color-accent)"
+                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
                     className="transition-all duration-300"
                   />
                 </g>

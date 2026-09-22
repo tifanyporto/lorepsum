@@ -7,6 +7,7 @@
   --color-muted: #8a8072; /* muted */
   --color-line: #d7cebc; /* hairline */
   --color-accent: #6b4e96; /* accent — plum */
+  --color-here: #94824c; /* here - where you are now */
   --color-beyond: #4c6e94;
 
   --font-serif: "Fraunces", Georgia, serif;
@@ -21,6 +22,7 @@
   --color-muted: #8b857a;
   --color-line: #332f29;
   --color-accent: #ad8bd4;
+  --color-here: #d4c28c;
   --color-beyond: #8bafd4;
 }
 
