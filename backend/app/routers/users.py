@@ -30,13 +30,22 @@ def create_user(payload: UserCreate, db = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@router.get("/users/me", response_model=UserRead)
-def get_current_user(db = Depends(get_db)):
-        # temporary. becomes a session read once login exists (#14)
-    current_user = db.query(User).filter(User.name == "dev").first()
-    if current_user is None:
+def current_user(db = Depends(get_db)) -> User:
+    """Who is asking. Every endpoint that needs an owner depends on this.
+
+    Temporary: with no session there is nothing to read, so it is fixed on the
+    dev user. It becomes a session read once login exists (#14), and not one
+    caller changes when it does.
+    """
+    user = db.query(User).filter(User.name == "dev").first()
+    if user is None:
         raise HTTPException(status_code=404, detail="user not found")
-    return current_user
+    return user
+
+
+@router.get("/users/me", response_model=UserRead)
+def get_current_user(user: User = Depends(current_user)):
+    return user
 
 
 @router.get("/users/{user_id}", response_model=UserRead)

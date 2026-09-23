@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, SmallInteger, String, DateTime, ForeignKey, CheckConstraint, UniqueConstraint, Index, Boolean, text
+from sqlalchemy import Column, Integer, SmallInteger, String, Date, DateTime, ForeignKey, CheckConstraint, UniqueConstraint, Index, Boolean, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from app.database import Base
 
@@ -82,6 +82,29 @@ class Relationship(Base):
     gloss = Column(String)   
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     weight = Column(SmallInteger)
+
+class EntityDate(Base):
+    """A date that means something to an entity, and the word for what it means.
+
+    Same shape as Relationship: the system keeps the structure, the person names
+    the meaning. Nobody has to decide in advance that a Person has a birth and a
+    Movie has a release - you write the label that fits.
+
+    An entity can hold several: Batman has a birth and a first appearance.
+    """
+
+    __tablename__ = "entity_dates"
+    __table_args__ = (UniqueConstraint("entity_id", "date", "label"),)
+
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    # Date, not DateTime: a birthday is a day, not an instant. It has no hour and
+    # no timezone - storing one would make the date shift when a person travels.
+    date = Column(Date, nullable=False)
+    # required, unlike the label on a relationship: a date with no word for what
+    # it is says nothing at all
+    label = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 class EntityImage(Base):
     __tablename__ = "entity_images"

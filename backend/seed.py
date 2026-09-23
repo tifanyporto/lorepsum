@@ -14,12 +14,15 @@ Never point this at the real database.
 import sys
 
 from app.database import SessionLocal
-from app.models import User, EntityType, Entity, Relationship, Lore, EntityLore
+from datetime import date
+
+from app.models import User, EntityType, Entity, Relationship, Lore, EntityLore, EntityDate
 
 db = SessionLocal()
 
 if "--reset" in sys.argv:
     # order matters: children before parents, or the foreign keys refuse
+    db.query(EntityDate).delete()
     db.query(EntityLore).delete()
     db.query(Relationship).delete()
     db.query(Lore).delete()
@@ -223,6 +226,34 @@ for nome, e in ents.items():
 for nome in ("Sarcasm", "Friendship", "Bazinga"):
     db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores["Nebula"].id))
 
+# --------------------------------------------------------------- the dates
+# The system keeps the structure, the person names the meaning: there is no
+# rule saying a Person has a birth and a Movie has a release. You write the
+# label that fits, and one entity can hold several.
+DATES = [
+    ("dev", date(1996, 3, 14), "born"),
+
+    ("Sheldon Cooper", date(1980, 2, 26), "born"),
+    ("Sheldon Cooper", date(2007, 9, 24), "first appeared"),
+    ("Leonard Hofstadter", date(1980, 5, 17), "born"),
+    ("Penny", date(1985, 12, 2), "born"),
+    ("Howard Wolowitz", date(1981, 4, 8), "born"),
+    ("Raj Koothrappali", date(1981, 10, 6), "born"),
+    ("Amy Farrah Fowler", date(2010, 5, 24), "first appeared"),
+    ("Bernadette Rostenkowski", date(2009, 3, 9), "first appeared"),
+    ("Stuart Bloom", date(2008, 10, 20), "first appeared"),
+
+    ("The Mars Rover", date(2010, 2, 22), "driven into a ditch"),
+    ("Howard Wolowitz", date(2012, 5, 10), "went to space"),
+    ("Howard Wolowitz", date(2012, 9, 27), "came back"),
+
+    ("The Roommate Agreement", date(2003, 11, 1), "signed"),
+    ("Apartment 4B", date(2007, 9, 24), "she moved in"),
+]
+
+for nome, quando, rotulo in DATES:
+    db.add(EntityDate(entity_id=ents[nome].id, date=quando, label=rotulo))
+
 for source, label, target, weight, gloss in R:
     db.add(Relationship(
         source_id=ents[source].id,
@@ -238,6 +269,7 @@ print(f"  types           {db.query(EntityType).count()}")
 print(f"  entities        {db.query(Entity).count()}")
 print(f"  relationships   {db.query(Relationship).count()}")
 print(f"  with a gloss    {db.query(Relationship).filter(Relationship.gloss.isnot(None)).count()}")
+print(f"  dates           {db.query(EntityDate).count()}")
 print(f"  lores           {db.query(Lore).count()}")
 print(f"  memberships     {db.query(EntityLore).count()}")
 print(f"  user            {dev.name!r}, self_entity_id={dev.self_entity_id}")

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date as date_type, datetime
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,6 +30,32 @@ class UserUpdate(BaseModel):
     email: str | None = None
     password_hash: str | None = None
     self_entity_id: int | None = None
+
+class LoreCreate(BaseModel):
+    # owner_id is absent on purpose: who owns a lore comes from who is asking,
+    # never from the request body. Letting the client name the owner would let
+    # anyone create a lore inside someone else's account.
+    name: str
+    description: str | None = None
+
+class LoreRead(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    # not a column: counted per request, because a lore is a slice and the size
+    # of a slice is a question about the join table, not a property of the row
+    entity_count: int
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+    model_config = ConfigDict(from_attributes=True)
+
+class LoreUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+class LoreEntityCreate(BaseModel):
+    entity_id: int
 
 class EntityTypeCreate(BaseModel):
     name: str
@@ -65,6 +91,25 @@ class EntityUpdate(BaseModel):
     entity_type_id: int | None = None
     description: str | None = None
     attributes: dict | None = None
+
+class EntityDateCreate(BaseModel):
+    # date_type is datetime.date renamed on import. A field called `date` can be
+    # annotated `date` when it has no default - but `date: date | None = None`
+    # cannot: Python assigns the default first, so by the time it reads the
+    # annotation the name already means None. Renamed here too, for consistency.
+    date: date_type
+    label: str
+
+class EntityDateRead(BaseModel):
+    id: int
+    entity_id: int
+    date: date_type
+    label: str
+    model_config = ConfigDict(from_attributes=True)
+
+class EntityDateUpdate(BaseModel):
+    date: date_type | None = None
+    label: str | None = None
 
 class EntityImageRead(BaseModel):
     id: int
