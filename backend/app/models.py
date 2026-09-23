@@ -17,8 +17,33 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     archived_at = Column(DateTime(timezone=True), nullable=True)
 
+class Lore(Base):
+    __tablename__ = "lores"
+    __table_args__ = (
+        # two people may both have a lore called "DC Comics"; the same person
+        # may not have two
+        UniqueConstraint("owner_id", "name"),
+    )
 
-    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    archived_at = Column(DateTime(timezone=True), nullable=True)
+
+class EntityLore(Base):
+    """Which entities belong to which lore. A lore is a slice, not a container:
+    the same entity can sit in several of them at once."""
+
+    __tablename__ = "entity_lores"
+
+    # the pair is the primary key: this row has no identity of its own, it IS
+    # the statement that these two touch
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), primary_key=True)
+    lore_id = Column(Integer, ForeignKey("lores.id", ondelete="CASCADE"), primary_key=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 class EntityType(Base):
     __tablename__ = "entity_types"

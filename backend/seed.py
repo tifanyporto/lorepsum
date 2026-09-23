@@ -14,13 +14,15 @@ Never point this at the real database.
 import sys
 
 from app.database import SessionLocal
-from app.models import User, EntityType, Entity, Relationship
+from app.models import User, EntityType, Entity, Relationship, Lore, EntityLore
 
 db = SessionLocal()
 
 if "--reset" in sys.argv:
     # order matters: children before parents, or the foreign keys refuse
+    db.query(EntityLore).delete()
     db.query(Relationship).delete()
+    db.query(Lore).delete()
     db.query(User).update({User.self_entity_id: None})
     db.query(Entity).delete()
     db.query(User).delete()
@@ -47,38 +49,38 @@ db.flush()
 
 # --------------------------------------------------------------- entities
 ENTITIES = [
-    ("dev", "Person", "Where it all starts. Everything here is here because you put it here."),
+    ("dev", "Person", "Where it all starts. Every entity here exists because you put it here, and every line between them is a claim you made. This card is the only one in the collection whose subject is also its reader."),
 
-    ("Sheldon Cooper", "Character", "A theoretical physicist who treats social convention as an optional protocol. Certainty is his default state."),
-    ("Leonard Hofstadter", "Character", "An experimental physicist, and the one who keeps the apartment habitable in every sense."),
-    ("Penny", "Character", "An aspiring actress from Nebraska who becomes the group's translator to the outside world."),
-    ("Howard Wolowitz", "Character", "An aerospace engineer, the only one of the four without a doctorate, and the only one who has been to space."),
-    ("Raj Koothrappali", "Character", "An astrophysicist from New Delhi whose voice used to abandon him around women."),
-    ("Amy Farrah Fowler", "Character", "A neurobiologist who met Sheldon through an algorithm and stayed by choice."),
-    ("Bernadette Rostenkowski", "Character", "A microbiologist with a very small voice and a very large will."),
-    ("Stuart Bloom", "Character", "The owner of the comic book store, permanently one bad month from closing."),
+    ("Sheldon Cooper", "Character", "A theoretical physicist who treats social convention as an optional protocol and certainty as a resting state. He is not unkind so much as unequipped; the rules other people absorb by osmosis, he has to be handed in writing. Everything he loves, he loves at full volume and in numbered order."),
+    ("Leonard Hofstadter", "Character", "An experimental physicist, and the one who keeps the apartment habitable in every sense of the word. He is the group's centre of gravity precisely because he wants least to be, and the only one who could plausibly leave and does not."),
+    ("Penny", "Character", "An aspiring actress from Nebraska who moved in across the hall and became the group's translator to the outside world. She arrived knowing nothing about any of it and ended up the person who explains them to each other."),
+    ("Howard Wolowitz", "Character", "An aerospace engineer, the only one of the four without a doctorate and the only one who has been to space. He spent years performing a confidence he did not have, and stopped roughly when someone believed him."),
+    ("Raj Koothrappali", "Character", "An astrophysicist from New Delhi whose voice used to abandon him around women, which made him the most eloquent person in the room and the least heard. He wants to be chosen more than he wants to choose."),
+    ("Amy Farrah Fowler", "Character", "A neurobiologist who met Sheldon through an algorithm and stayed by choice, which is the harder of the two. She studied friendship as a subject for years before she was offered one, and she knew exactly what she was being given."),
+    ("Bernadette Rostenkowski", "Character", "A microbiologist with a very small voice and a very large will. She works with organisms that could empty a city and is, by some distance, the most frightening person any of them know."),
+    ("Stuart Bloom", "Character", "The owner of the comic book store, permanently one bad month from closing and permanently there anyway. He is the group's fifth member by attrition rather than invitation, which he knows and mentions."),
 
-    ("Apartment 4A", "Place", "Fourth floor, no working lift. The couch faces a television nobody chose together."),
-    ("Apartment 4B", "Place", "Across the hall. The door that made the whole arrangement possible."),
-    ("The Cheesecake Factory", "Place", "A restaurant with an enormous menu, used mostly as a waiting room for other lives."),
-    ("The Comic Center of Pasadena", "Place", "A shop that functions as a clubhouse for people who never agreed to join a club."),
-    ("Galveston", "Place", "A city in Texas. Where the accent comes from, and the mother."),
+    ("Apartment 4A", "Place", "Fourth floor, no working lift, and a flight of stairs that has hosted more of the important conversations than the living room has. The couch faces a television nobody chose together, and the seat nearest the window is not available."),
+    ("Apartment 4B", "Place", "Across the hall, which is the entire reason any of this happened. Geography did what none of them would have managed deliberately: it put a stranger inside the routine and left her there."),
+    ("The Cheesecake Factory", "Place", "A restaurant with a menu the size of a paperback, used mostly as a waiting room for other lives. Two of them worked here before their real work started, and neither mentions it at the same volume."),
+    ("The Comic Center of Pasadena", "Place", "A shop that functions as a clubhouse for people who never agreed to join a club. The arguments that happen here are about continuity, and they are never really about continuity."),
+    ("Galveston", "Place", "A city on the Texas coast. It supplies the accent that appears under stress, the mother who is the only recognised authority, and a childhood that gets described as evidence rather than as memory."),
 
-    ("Caltech", "Organization", "The institute where four of them work and where none of them entirely belong."),
-    ("NASA", "Organization", "The agency that sent an engineer to the International Space Station and never let him forget it."),
+    ("Caltech", "Organization", "The institute where four of them work and where none of them entirely belong. It is less a workplace than a shared condition: the same corridors, the same cafeteria, the same argument about whose field is real."),
+    ("NASA", "Organization", "The agency that put an engineer on the International Space Station for eleven days and thereby gave him material for the rest of his life. It is referenced more often than it is thought about."),
 
-    ("Sheldon's Spot", "Object", "A single cushion on a sofa, defended by argument rather than by force."),
-    ("The Whiteboard", "Object", "Where the equations live. Erasing it without permission is a declaration of war."),
-    ("Soft Kitty", "Object", "A lullaby about a warm ball of fur, deployed strictly for illness."),
-    ("The Roommate Agreement", "Object", "A contract governing a friendship, with clauses for events that have never occurred."),
-    ("The Mars Rover", "Object", "A vehicle on another planet, briefly driven into a ditch to impress someone."),
+    ("Sheldon's Spot", "Object", "A single cushion on a sofa, defended by argument rather than by force. In an ever-changing world it is his one fixed point, and he will explain the reasoning — draught, sightline, angle to the television — to anyone who sits there."),
+    ("The Whiteboard", "Object", "Where the equations live. Erasing it without permission is a declaration of war, and correcting it without permission is worse, because it implies the correction was available."),
+    ("Soft Kitty", "Object", "A lullaby about a warm ball of fur, deployed strictly during illness and never for comfort in general. The rules around it are precise, unwritten, and enforced."),
+    ("The Roommate Agreement", "Object", "A contract governing a friendship, with clauses for events that have never occurred and one or two that cannot. It was signed unread, which becomes relevant about once a year."),
+    ("The Mars Rover", "Object", "A vehicle on another planet, briefly driven into a ditch to impress someone who was never going to be impressed. It is still up there, and so is the ditch."),
 
-    ("String Theory", "Concept", "The idea that the smallest things are not points but vibrating strings. A career, and a way of arguing."),
-    ("Bazinga", "Concept", "A word appended to a statement to retroactively declare it a joke."),
-    ("Sarcasm", "Concept", "Saying the opposite of what you mean and expecting to be understood anyway."),
-    ("Friendship", "Concept", "A relationship with no contract, which is precisely what makes it difficult for some."),
-    ("The Doppler Effect", "Concept", "The way a sound changes pitch as its source moves past you."),
-    ("Germs", "Concept", "Organisms too small to see, and large enough to reorganise an entire life around."),
+    ("String Theory", "Concept", "The idea that the smallest things are not points but vibrating strings, and that the universe has more dimensions than anyone can picture. For one of them it is a career; for the rest, a reliable way to start an argument."),
+    ("Bazinga", "Concept", "A word appended to a statement in order to declare, retroactively, that it was a joke. It works only for the speaker, which is what makes it useful to him and unbearable to everyone else."),
+    ("Sarcasm", "Concept", "Saying the opposite of what you mean and expecting to be understood anyway. It requires a shared assumption about what is obvious, which is exactly the assumption one of them cannot make."),
+    ("Friendship", "Concept", "A relationship with no contract, no clauses and no agreed procedure for repair. That absence is what makes it valuable and what makes it, for some people, almost impossible to enter."),
+    ("The Doppler Effect", "Concept", "The way a sound changes pitch as its source moves past you. Once worn as a costume to a party where nobody guessed, an outcome that was recorded as the party's failure."),
+    ("Germs", "Concept", "Organisms too small to see and consequential enough to reorganise an entire life around. The fear of them is not irrational so much as unbounded: there is no amount of washing that constitutes enough."),
 ]
 
 ents = {}
@@ -160,7 +162,66 @@ R = [
     # Stuart
     ("Stuart Bloom", "owns", "The Comic Center of Pasadena", 3, None),
     ("Stuart Bloom", "friend of", "Howard Wolowitz", 1, "In the way that a person who is always there eventually becomes a friend."),
+
+    # second pass: the leaves get outgoing edges of their own
+    ("Apartment 4A", "faces", "Apartment 4B", 2, "One door, and the entire premise of the thing."),
+    ("Apartment 4B", "belongs to", "Penny", 2, None),
+    ("Caltech", "employs", "Sheldon Cooper", 1, None),
+    ("Caltech", "employs", "Amy Farrah Fowler", 1, None),
+    ("The Cheesecake Factory", "employed", "Penny", 1, None),
+    ("The Comic Center of Pasadena", "hosts", "Friendship", 1, "Four grown men arguing about continuity is what it looks like from outside."),
+    ("Sheldon's Spot", "sits in", "Apartment 4A", 2, None),
+    ("The Whiteboard", "holds", "String Theory", 2, "Whatever is on it at the time is the thing he is losing sleep over."),
+    ("Soft Kitty", "cures", "Germs", 1, "It does not. That is not the point of it."),
+    ("The Roommate Agreement", "governs", "Apartment 4A", 2, None),
+    ("The Mars Rover", "belongs to", "NASA", 2, None),
+    ("String Theory", "explains", "The Doppler Effect", 1, None),
+    ("Bazinga", "disguises", "Sarcasm", 2, "A joke declared after the fact is a way of not having meant it."),
+    ("Sarcasm", "requires", "Friendship", 2, "You can only say the opposite of what you mean to someone who knows what you mean."),
+    ("Germs", "haunt", "Sheldon Cooper", 3, None),
+    ("Galveston", "raised", "Sheldon Cooper", 2, "Every certainty he has, he got from a place he describes as having escaped."),
+    ("NASA", "flew", "Howard Wolowitz", 2, None),
+    ("Friendship", "survives", "The Roommate Agreement", 1, "Despite it, most weeks."),
+    ("The Doppler Effect", "passes", "Galveston", 1, None),
+    ("Amy Farrah Fowler", "friend of", "Bernadette Rostenkowski", 2, None),
+    ("Bernadette Rostenkowski", "works at", "Caltech", 1, None),
+    ("Stuart Bloom", "sells", "Friendship", 1, "Not on purpose, and not at a price that covers rent."),
+    ("Penny", "sat in", "Sheldon's Spot", 1, "Once. Deliberately. It is still brought up."),
+    ("Leonard Hofstadter", "lives with", "The Roommate Agreement", 2, None),
+    ("Raj Koothrappali", "studies", "String Theory", 1, None),
+    ("Howard Wolowitz", "mocks", "String Theory", 2, "The only field that cannot be tested, defended by the only man who cannot be corrected."),
 ]
+
+# -------------------------------------------------------------------- lores
+# A lore is a slice, not a container: the same entity can belong to several.
+# Nebula is the one every account starts with. In astronomy a nebula is both
+# the nursery where stars form and the shapeless cloud that has not become
+# anything yet, which is exactly the two jobs this lore has to do - it starts
+# as everything, and ends up as everything else.
+LORES = [
+    ("Nebula", "Where things arrive before they belong anywhere. It starts as all you have, and becomes all that is left over."),
+    ("The Big Bang Theory", "Four physicists, a waitress across the hall, and the apartment that held them."),
+]
+
+lores = {}
+for nome, desc in LORES:
+    lore = Lore(name=nome, description=desc, owner_id=dev.id)
+    db.add(lore)
+    lores[nome] = lore
+db.flush()
+
+# Every entity belongs to at least one lore, except the one that IS you. The
+# you-node sits outside the slicing for the same reason it sits outside the
+# force simulation: it is the frame, not the content. The screen draws it apart
+# from the entity list, so it appears whichever lore is open.
+for nome, e in ents.items():
+    if nome == "dev":
+        continue
+    db.add(EntityLore(entity_id=e.id, lore_id=lores["The Big Bang Theory"].id))
+
+# a few sit in both, which is the whole point of a slice
+for nome in ("Sarcasm", "Friendship", "Bazinga"):
+    db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores["Nebula"].id))
 
 for source, label, target, weight, gloss in R:
     db.add(Relationship(
@@ -177,5 +238,7 @@ print(f"  types           {db.query(EntityType).count()}")
 print(f"  entities        {db.query(Entity).count()}")
 print(f"  relationships   {db.query(Relationship).count()}")
 print(f"  with a gloss    {db.query(Relationship).filter(Relationship.gloss.isnot(None)).count()}")
+print(f"  lores           {db.query(Lore).count()}")
+print(f"  memberships     {db.query(EntityLore).count()}")
 print(f"  user            {dev.name!r}, self_entity_id={dev.self_entity_id}")
 db.close()
