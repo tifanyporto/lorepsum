@@ -67,6 +67,7 @@ ENTITIES = [
     ("Apartment 4B", "Place", "Across the hall, which is the entire reason any of this happened. Geography did what none of them would have managed deliberately: it put a stranger inside the routine and left her there."),
     ("The Cheesecake Factory", "Place", "A restaurant with a menu the size of a paperback, used mostly as a waiting room for other lives. Two of them worked here before their real work started, and neither mentions it at the same volume."),
     ("The Comic Center of Pasadena", "Place", "A shop that functions as a clubhouse for people who never agreed to join a club. The arguments that happen here are about continuity, and they are never really about continuity."),
+    ("Belo Horizonte", "Place", "A real city, and the only entity here that exists outside the collection in a way an atlas could confirm. Where the you-node was born."),
     ("Galveston", "Place", "A city on the Texas coast. It supplies the accent that appears under stress, the mother who is the only recognised authority, and a childhood that gets described as evidence rather than as memory."),
 
     ("Caltech", "Organization", "The institute where four of them work and where none of them entirely belong. It is less a workplace than a shared condition: the same corridors, the same cafeteria, the same argument about whose field is real."),
@@ -110,6 +111,7 @@ R = [
     ("dev", "quotes", "Bazinga", 2, None),
     ("dev", "lives on", "Sarcasm", 3, "Which is why the one character who cannot hear it is the funniest."),
     ("dev", "admires", "Amy Farrah Fowler", 2, "She chose the hardest person in the room and made it look deliberate."),
+    ("dev", "born in", "Belo Horizonte", 3, "Not chosen, and still the first thing on the card."),
     ("dev", "rewatches", "Apartment 4A", 1, "The same four walls, and somehow never the same episode twice."),
 
     # Sheldon
@@ -217,13 +219,18 @@ db.flush()
 # you-node sits outside the slicing for the same reason it sits outside the
 # force simulation: it is the frame, not the content. The screen draws it apart
 # from the entity list, so it appears whichever lore is open.
+#
+# Belo Horizonte is not from the show, so it is not in the show's lore. It sits
+# in Nebula, where things that belong to no particular slice arrive.
+FORA_DA_SERIE = {"dev", "Belo Horizonte"}
+
 for nome, e in ents.items():
-    if nome == "dev":
+    if nome in FORA_DA_SERIE:
         continue
     db.add(EntityLore(entity_id=e.id, lore_id=lores["The Big Bang Theory"].id))
 
-# a few sit in both, which is the whole point of a slice
-for nome in ("Sarcasm", "Friendship", "Bazinga"):
+# these sit in both, which is the whole point of a slice
+for nome in ("Sarcasm", "Friendship", "Bazinga", "Belo Horizonte"):
     db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores["Nebula"].id))
 
 # --------------------------------------------------------------- the dates

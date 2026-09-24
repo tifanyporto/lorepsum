@@ -210,378 +210,374 @@ function Focus() {
         <ThemeToggle />
       </div>
       <div className="absolute inset-0">
-          <svg
-            ref={svgRef}
-            className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
-            onPointerDown={(e) =>
-              setDragStart({
-                pointerX: e.clientX,
-                pointerY: e.clientY,
-                panX: pan.x,
-                panY: pan.y,
-              })
+        <svg
+          ref={svgRef}
+          className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-none select-none"
+          onPointerDown={(e) =>
+            setDragStart({
+              pointerX: e.clientX,
+              pointerY: e.clientY,
+              panX: pan.x,
+              panY: pan.y,
+            })
+          }
+          onPointerMove={(e) => {
+            if (dragStart === null) return;
+            setPan({
+              x: dragStart.panX + (e.clientX - dragStart.pointerX),
+              y: dragStart.panY + (e.clientY - dragStart.pointerY),
+            });
+          }}
+          onPointerUp={() => setDragStart(null)}
+          onPointerLeave={() => setDragStart(null)}
+        >
+          <g
+            transform={`translate(${boxSize.width / 2 + pan.x}, ${boxSize.height / 2 + pan.y}) scale(${zoom})`}
+            className={
+              dragStart ? "" : "transition-transform duration-500 ease-out"
             }
-            onPointerMove={(e) => {
-              if (dragStart === null) return;
-              setPan({
-                x: dragStart.panX + (e.clientX - dragStart.pointerX),
-                y: dragStart.panY + (e.clientY - dragStart.pointerY),
-              });
-            }}
-            onPointerUp={() => setDragStart(null)}
-            onPointerLeave={() => setDragStart(null)}
           >
-            <g
-              transform={`translate(${boxSize.width / 2 + pan.x}, ${boxSize.height / 2 + pan.y}) scale(${zoom})`}
-              className={
-                dragStart ? "" : "transition-transform duration-500 ease-out"
-              }
-            >
-              {graphLinks.map((l) => {
-                const touchesFocus =
-                  l.source.id === focusedId || l.target.id === focusedId;
-                const touchesHover =
-                  l.source.id === hoveredId || l.target.id === hoveredId;
-                return (
-                  <line
-                    x1={l.source.x}
-                    y1={l.source.y}
-                    x2={l.target.x}
-                    y2={l.target.y}
-                    stroke={
-                      touchesFocus ? "var(--color-here)" : "var(--color-ink)"
-                    }
-                    strokeOpacity={
-                      touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.16
-                    }
-                    strokeWidth={touchesHover ? 1.6 : touchesFocus ? 1.3 : 1}
-                    key={`${l.source.id}-${l.target.id}`}
-                    className="transition-all duration-300"
-                  />
-                );
-              })}
-              {/* the you-node's own edges. They are drawn apart because the
+            {graphLinks.map((l) => {
+              const touchesFocus =
+                l.source.id === focusedId || l.target.id === focusedId;
+              const touchesHover =
+                l.source.id === hoveredId || l.target.id === hoveredId;
+              return (
+                <line
+                  x1={l.source.x}
+                  y1={l.source.y}
+                  x2={l.target.x}
+                  y2={l.target.y}
+                  stroke={
+                    touchesFocus ? "var(--color-here)" : "var(--color-ink)"
+                  }
+                  strokeOpacity={
+                    touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.16
+                  }
+                  strokeWidth={touchesHover ? 1.6 : touchesFocus ? 1.3 : 1}
+                  key={`${l.source.id}-${l.target.id}`}
+                  className="transition-all duration-300"
+                />
+              );
+            })}
+            {/* the you-node's own edges. They are drawn apart because the
                   you-node is not in the simulation, so the link filter above
                   never sees them. Each one starts at radius 27 — on the arcs —
                   instead of at the centre, so it leaves through the side gaps
                   rather than cutting across the shape. */}
-              {user?.self_entity_id != null &&
-                allRelationships
-                  .filter((r) => r.source_id === user.self_entity_id)
-                  .map((r) => {
-                    const target = graphNodes.find((n) => n.id === r.target_id);
-                    if (target?.x == null || target.y == null) return null;
-                    // walk 27 along the direction of the target
-                    const distance = Math.hypot(target.x, target.y);
-                    const start = 27 / distance;
-                    const isFocused = focusedId === user.self_entity_id;
-                    return (
-                      <line
-                        key={`me-${r.id}`}
-                        x1={target.x * start}
-                        y1={target.y * start}
-                        x2={target.x}
-                        y2={target.y}
-                        stroke="var(--color-accent)"
-                        strokeWidth={isFocused ? 1.4 : 1.1}
-                        strokeOpacity={isFocused ? 0.7 : 0.3}
-                        className="transition-all duration-300"
-                      />
-                    );
-                  })}
-              {graphNodes.map((n) => {
-                const isFocused = n.id === focusedId;
-                const isNeighbor = neighborIds.has(n.id);
-                const isHovered = n.id === hoveredId;
-                const showName = isFocused || isNeighbor || isHovered;
-                const r = isFocused ? 9 : 6;
-                return (
-                  <g
-                    key={n.id}
-                    onMouseEnter={() => setHoveredId(n.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                  >
-                    {isFocused && (
-                      <>
-                        <circle
-                          cx={n.x}
-                          cy={n.y}
-                          r={r}
-                          fill="none"
-                          stroke="var(--color-here)"
-                          strokeWidth={1.4}
-                          className="pulse-ring"
-                        />
-                        <circle
-                          cx={n.x}
-                          cy={n.y}
-                          r={r}
-                          fill="none"
-                          stroke="var(--color-here)"
-                          strokeWidth={1.4}
-                          className="pulse-ring"
-                          style={{ animationDelay: "1.3s" }}
-                        />
-                      </>
-                    )}
-                    <circle
-                      cx={n.x}
-                      cy={n.y}
-                      r={r}
-                      fill={
-                        isFocused || isHovered
-                          ? "var(--color-here)"
-                          : "var(--color-ink)"
-                      }
-                      fillOpacity={
-                        isFocused || isHovered ? 1 : isNeighbor ? 0.9 : 0.45
-                      }
-                      className="transition-all duration-300 cursor-pointer"
-                      onClick={() => {
-                        setFocusedId(n.id);
-                        setArrivalGloss(
-                          connections.find((c) => c.targetId === n.id)?.gloss ??
-                            null,
-                        );
-                        setPan({
-                          x: -(n.x ?? 0) * zoom,
-                          y: -(n.y ?? 0) * zoom,
-                        });
-                      }}
-                    />
-                    {showName && (
-                      <text
-                        x={n.x}
-                        y={(n.y ?? 0) + r + 14}
-                        textAnchor="middle"
-                        fill={
-                          isFocused ? "var(--color-ink)" : "var(--color-muted)"
-                        }
-                        fontSize={10}
-                        stroke="var(--color-canvas)"
-                        strokeWidth={3}
-                        paintOrder="stroke"
-                      >
-                        {n.name}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* the you-node: pinned at the origin, outside the simulation.
-                  Placeholder shape until #6 decides what it looks like. */}
-              {user?.self_entity_id != null && (
-                <g
-                  onClick={() => {
-                    setFocusedId(user.self_entity_id);
-                    setArrivalGloss(null);
-                    setPan({ x: 0, y: 0 });
-                  }}
-                  className="cursor-pointer"
-                >
-                  {focusedId === user.self_entity_id && (
-                    <circle
-                      r={12}
-                      fill="none"
-                      stroke="var(--color-accent)"
-                      strokeWidth={1.4}
-                      className="pulse-ring"
-                    />
-                  )}
-                  {/* two open arcs instead of a closed ring: the gaps let the
-                      real edges pass through, so the shape never strangles a
-                      connection the way a full circle would */}
-                  <g
-                    fill="none"
-                    stroke="var(--color-accent)"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                    strokeOpacity={
-                      focusedId === user.self_entity_id ? 0.9 : 0.55
-                    }
-                    className="transition-all duration-300"
-                  >
-                    <path d="M -24 -12 A 27 27 0 0 1 24 -12" />
-                    <path d="M 24 12 A 27 27 0 0 1 -24 12" />
-                  </g>
-                  {/* the core is a diamond, never a dot — it must not read as
-                      one more node among the others */}
-                  <rect
-                    x={-6}
-                    y={-6}
-                    width={12}
-                    height={12}
-                    transform="rotate(45)"
-                    fill="var(--color-accent)"
-                    fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
-                    className="transition-all duration-300"
-                  />
-                </g>
-              )}
-            </g>
-          </svg>
-      </div>
-      <div className="absolute top-[68px] right-5 bottom-5 z-10 w-[420px] overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
-          {/* header: cover + identity */}
-          <div className="flex gap-[18px] items-start">
-            <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
-              {coverImage ? (
-                <img
-                  className="w-full h-full object-cover"
-                  src={coverUrl}
-                  alt={
-                    coverImage.description ?? `${entity?.name}'s cover photo`
-                  }
-                />
-              ) : (
-                <Logo muted className="w-12 h-12" />
-              )}
-            </div>
-            <div>
-              <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-[7px]">
-                {type?.name}
-              </h2>
-              <h1 className="font-serif text-[28px] leading-[1.1] tracking-tight text-ink">
-                {entity?.name}
-              </h1>
-              <p className="font-serif text-muted text-sm leading-[1.62] mt-[11px]">
-                {arrivalGloss ?? entity?.description}
-              </p>
-            </div>
-          </div>
-
-          {/* connections, grouped by type */}
-          <section className="mt-7">
-            <div className="flex items-center gap-2.5 mb-[18px]">
-              <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
-                connections
-              </span>
-              <span className="flex-1 h-px bg-line" />
-              {relationships.length > 0 && (
-                <button
-                  onClick={() =>
-                    setOpenTypes(
-                      openTypes.length === connectionTypes.length
-                        ? []
-                        : connectionTypes,
-                    )
-                  }
-                  className="font-mono text-muted text-[9.5px] uppercase tracking-[0.14em] cursor-pointer hover:text-accent transition-colors"
-                >
-                  {openTypes.length === connectionTypes.length
-                    ? "collapse all"
-                    : "expand all"}
-                </button>
-              )}
-              <span className="font-mono text-muted text-[9.5px] opacity-70">
-                {relationships.length}
-              </span>
-            </div>
-
-            {relationships.length === 0 ? (
-              <p className="font-mono text-muted text-[12px]">
-                there are no connections yet.
-              </p>
-            ) : (
-              connectionTypes.map((typeName) => {
-                const rows = connections.filter((c) => c.typeName === typeName);
-                const isOpen = openTypes.includes(typeName);
-                return (
-                  <div key={typeName} className="mb-[22px] last:mb-0">
-                    <div
-                      onClick={() =>
-                        setOpenTypes(
-                          isOpen
-                            ? openTypes.filter((t) => t !== typeName)
-                            : [...openTypes, typeName],
-                        )
-                      }
-                      className={`flex items-baseline gap-2.5 mb-2 cursor-pointer font-mono text-[14px] transition-colors hover:text-accent ${
-                        isOpen ? "text-ink" : "text-muted"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block w-[7px] text-[9px] opacity-50 transition-transform duration-200 ${
-                          isOpen ? "rotate-90" : ""
-                        }`}
-                      >
-                        ▶
-                      </span>
-                      <span>{typeName}</span>
-                      <span className="text-[9.5px] opacity-55">
-                        {rows.length}
-                      </span>
-                    </div>
-
-                    {/* the drawer: 0fr -> 1fr is what makes the height animatable */}
-                    <div
-                      className={`grid transition-all duration-300 ease-out ${
-                        isOpen
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        {rows.map((c) => (
-                          <div
-                            key={c.id}
-                            onClick={() => {
-                              setFocusedId(c.targetId);
-                              setArrivalGloss(c.gloss);
-                            }}
-                            className="group grid grid-cols-[94px_1fr] gap-4 items-baseline py-1.5 pl-0.5 border-l-2 border-transparent hover:border-accent transition-colors cursor-pointer"
-                          >
-                            <span className="font-mono text-muted text-[12px] opacity-70 text-right truncate">
-                              {c.label}
-                            </span>
-                            <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
-                              {c.name}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </section>
-
-          {/* gallery */}
-          {gallery.length > 0 && (
-            <section className="mt-[30px]">
-              <div className="flex items-center gap-2.5 mb-[18px]">
-                <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
-                  gallery
-                </span>
-                <span className="flex-1 h-px bg-line" />
-                <span className="font-mono text-muted text-[9.5px] opacity-70">
-                  {gallery.length}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                {thumbnailGallery.map((i) => {
-                  const url = `${API_URL}/media/${i.path}`;
+            {user?.self_entity_id != null &&
+              allRelationships
+                .filter((r) => r.source_id === user.self_entity_id)
+                .map((r) => {
+                  const target = graphNodes.find((n) => n.id === r.target_id);
+                  if (target?.x == null || target.y == null) return null;
+                  // walk 27 along the direction of the target
+                  const distance = Math.hypot(target.x, target.y);
+                  const start = 27 / distance;
+                  const isFocused = focusedId === user.self_entity_id;
                   return (
-                    <img
-                      key={i.id}
-                      src={url}
-                      alt={i.description ?? `${entity?.name}`}
-                      className="w-[58px] h-[58px] object-cover rounded-md border border-line"
+                    <line
+                      key={`me-${r.id}`}
+                      x1={target.x * start}
+                      y1={target.y * start}
+                      x2={target.x}
+                      y2={target.y}
+                      stroke="var(--color-accent)"
+                      strokeWidth={isFocused ? 1.4 : 1.1}
+                      strokeOpacity={isFocused ? 0.7 : 0.3}
+                      className="transition-all duration-300"
                     />
                   );
                 })}
-                {remainingPhoto > 0 && (
-                  <div className="w-[58px] h-[58px] rounded-md border border-dashed border-line flex items-center justify-center bg-desk text-muted font-mono text-[11px]">
-                    +{remainingPhoto}
-                  </div>
+            {graphNodes.map((n) => {
+              const isFocused = n.id === focusedId;
+              const isNeighbor = neighborIds.has(n.id);
+              const isHovered = n.id === hoveredId;
+              const showName = isFocused || isNeighbor || isHovered;
+              const r = isFocused ? 9 : 6;
+              return (
+                <g
+                  key={n.id}
+                  onMouseEnter={() => setHoveredId(n.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  {isFocused && (
+                    <>
+                      <circle
+                        cx={n.x}
+                        cy={n.y}
+                        r={r}
+                        fill="none"
+                        stroke="var(--color-here)"
+                        strokeWidth={1.4}
+                        className="pulse-ring"
+                      />
+                      <circle
+                        cx={n.x}
+                        cy={n.y}
+                        r={r}
+                        fill="none"
+                        stroke="var(--color-here)"
+                        strokeWidth={1.4}
+                        className="pulse-ring"
+                        style={{ animationDelay: "1.3s" }}
+                      />
+                    </>
+                  )}
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r={r}
+                    fill={
+                      isFocused || isHovered
+                        ? "var(--color-here)"
+                        : "var(--color-ink)"
+                    }
+                    fillOpacity={
+                      isFocused || isHovered ? 1 : isNeighbor ? 0.9 : 0.45
+                    }
+                    className="transition-all duration-300 cursor-pointer"
+                    onClick={() => {
+                      setFocusedId(n.id);
+                      setArrivalGloss(
+                        connections.find((c) => c.targetId === n.id)?.gloss ??
+                          null,
+                      );
+                      setPan({
+                        x: -(n.x ?? 0) * zoom,
+                        y: -(n.y ?? 0) * zoom,
+                      });
+                    }}
+                  />
+                  {showName && (
+                    <text
+                      x={n.x}
+                      y={(n.y ?? 0) + r + 14}
+                      textAnchor="middle"
+                      fill={
+                        isFocused ? "var(--color-ink)" : "var(--color-muted)"
+                      }
+                      fontSize={10}
+                      stroke="var(--color-canvas)"
+                      strokeWidth={3}
+                      paintOrder="stroke"
+                    >
+                      {n.name}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* the you-node: pinned at the origin, outside the simulation.
+                  Placeholder shape until #6 decides what it looks like. */}
+            {user?.self_entity_id != null && (
+              <g
+                onClick={() => {
+                  setFocusedId(user.self_entity_id);
+                  setArrivalGloss(null);
+                  setPan({ x: 0, y: 0 });
+                }}
+                className="cursor-pointer"
+              >
+                {focusedId === user.self_entity_id && (
+                  <circle
+                    r={12}
+                    fill="none"
+                    stroke="var(--color-accent)"
+                    strokeWidth={1.4}
+                    className="pulse-ring"
+                  />
                 )}
-              </div>
-            </section>
-          )}
-        </div>
+                {/* two open arcs instead of a closed ring: the gaps let the
+                      real edges pass through, so the shape never strangles a
+                      connection the way a full circle would */}
+                <g
+                  fill="none"
+                  stroke="var(--color-accent)"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeOpacity={focusedId === user.self_entity_id ? 0.9 : 0.55}
+                  className="transition-all duration-300"
+                >
+                  <path d="M -24 -12 A 27 27 0 0 1 24 -12" />
+                  <path d="M 24 12 A 27 27 0 0 1 -24 12" />
+                </g>
+                {/* the core is a diamond, never a dot — it must not read as
+                      one more node among the others */}
+                <rect
+                  x={-6}
+                  y={-6}
+                  width={12}
+                  height={12}
+                  transform="rotate(45)"
+                  fill="var(--color-accent)"
+                  fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
+                  className="transition-all duration-300"
+                />
+              </g>
+            )}
+          </g>
+        </svg>
       </div>
+      <div className="absolute top-[68px] right-12 bottom-5 z-10 w-[420px] overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+        {/* header: cover + identity */}
+        <div className="flex gap-[18px] items-start">
+          <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
+            {coverImage ? (
+              <img
+                className="w-full h-full object-cover"
+                src={coverUrl}
+                alt={coverImage.description ?? `${entity?.name}'s cover photo`}
+              />
+            ) : (
+              <Logo muted className="w-12 h-12" />
+            )}
+          </div>
+          <div>
+            <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-[7px]">
+              {type?.name}
+            </h2>
+            <h1 className="font-serif text-[28px] leading-[1.1] tracking-tight text-ink">
+              {entity?.name}
+            </h1>
+            <p className="font-serif text-muted text-sm leading-[1.62] mt-[11px]">
+              {arrivalGloss ?? entity?.description}
+            </p>
+          </div>
+        </div>
+
+        {/* connections, grouped by type */}
+        <section className="mt-7">
+          <div className="flex items-center gap-2.5 mb-[18px]">
+            <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
+              connections
+            </span>
+            <span className="flex-1 h-px bg-line" />
+            {relationships.length > 0 && (
+              <button
+                onClick={() =>
+                  setOpenTypes(
+                    openTypes.length === connectionTypes.length
+                      ? []
+                      : connectionTypes,
+                  )
+                }
+                className="font-mono text-muted text-[9.5px] uppercase tracking-[0.14em] cursor-pointer hover:text-accent transition-colors"
+              >
+                {openTypes.length === connectionTypes.length
+                  ? "collapse all"
+                  : "expand all"}
+              </button>
+            )}
+            <span className="font-mono text-muted text-[9.5px] opacity-70">
+              {relationships.length}
+            </span>
+          </div>
+
+          {relationships.length === 0 ? (
+            <p className="font-mono text-muted text-[12px]">
+              there are no connections yet.
+            </p>
+          ) : (
+            connectionTypes.map((typeName) => {
+              const rows = connections.filter((c) => c.typeName === typeName);
+              const isOpen = openTypes.includes(typeName);
+              return (
+                <div key={typeName} className="mb-[22px] last:mb-0">
+                  <div
+                    onClick={() =>
+                      setOpenTypes(
+                        isOpen
+                          ? openTypes.filter((t) => t !== typeName)
+                          : [...openTypes, typeName],
+                      )
+                    }
+                    className={`flex items-baseline gap-2.5 mb-2 cursor-pointer font-mono text-[14px] transition-colors hover:text-accent ${
+                      isOpen ? "text-ink" : "text-muted"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block w-[7px] text-[9px] opacity-50 transition-transform duration-200 ${
+                        isOpen ? "rotate-90" : ""
+                      }`}
+                    >
+                      ▶
+                    </span>
+                    <span>{typeName}</span>
+                    <span className="text-[9.5px] opacity-55">
+                      {rows.length}
+                    </span>
+                  </div>
+
+                  {/* the drawer: 0fr -> 1fr is what makes the height animatable */}
+                  <div
+                    className={`grid transition-all duration-300 ease-out ${
+                      isOpen
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      {rows.map((c) => (
+                        <div
+                          key={c.id}
+                          onClick={() => {
+                            setFocusedId(c.targetId);
+                            setArrivalGloss(c.gloss);
+                          }}
+                          className="group grid grid-cols-[94px_1fr] gap-4 items-baseline py-1.5 pl-0.5 border-l-2 border-transparent hover:border-accent transition-colors cursor-pointer"
+                        >
+                          <span className="font-mono text-muted text-[12px] opacity-70 text-right truncate">
+                            {c.label}
+                          </span>
+                          <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
+                            {c.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </section>
+
+        {/* gallery */}
+        {gallery.length > 0 && (
+          <section className="mt-[30px]">
+            <div className="flex items-center gap-2.5 mb-[18px]">
+              <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
+                gallery
+              </span>
+              <span className="flex-1 h-px bg-line" />
+              <span className="font-mono text-muted text-[9.5px] opacity-70">
+                {gallery.length}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              {thumbnailGallery.map((i) => {
+                const url = `${API_URL}/media/${i.path}`;
+                return (
+                  <img
+                    key={i.id}
+                    src={url}
+                    alt={i.description ?? `${entity?.name}`}
+                    className="w-[58px] h-[58px] object-cover rounded-md border border-line"
+                  />
+                );
+              })}
+              {remainingPhoto > 0 && (
+                <div className="w-[58px] h-[58px] rounded-md border border-dashed border-line flex items-center justify-center bg-desk text-muted font-mono text-[11px]">
+                  +{remainingPhoto}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
   );
 }
 export default Focus;
