@@ -302,6 +302,23 @@ function Focus() {
       return t?.x != null && t.y != null ? Math.hypot(t.x, t.y) : 0;
     }),
   );
+  const selfId = user?.self_entity_id;
+  // with you in focus, your connections are the neighbours that show a name,
+  // as any focused entity's are. Your edges live outside graphLinks, so they
+  // are added here by hand.
+  if (selfId != null && focusedId === selfId)
+    selfEdges.forEach((r) => neighborIds.add(r.target_id));
+  // the panel is showing you. Purple is yours in the panel as in the graph: it
+  // marks you at the top of this card and the claims in your connection list.
+  // It follows the entity on screen, not the focus — the focus changes on the
+  // click, the card only when its data arrives, and the kicker has to change
+  // together with the name beneath it.
+  const isSelf = selfId != null && entity?.id === selfId;
+  // on anyone else's card: what you said about them, if you said anything
+  const yourEdgesHere =
+    isSelf || entity == null
+      ? []
+      : selfEdges.filter((r) => r.target_id === entity.id);
   return (
     <div className="h-screen relative overflow-hidden bg-desk">
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none [&>*]:pointer-events-auto">
@@ -571,6 +588,18 @@ function Focus() {
         </svg>
       </div>
       <div className="absolute top-[68px] right-12 bottom-5 z-10 w-[420px] overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+        {/* on your own card the type gives way to YOU, set above the whole
+            header in the grammar of the panel's section headers — mono label,
+            hairline running to the edge — but in your purple and a size up,
+            so it heads the card instead of tagging it */}
+        {isSelf && (
+          <div className="flex items-center gap-2.5 mb-3.5">
+            <h2 className="font-mono text-accent text-[13px] uppercase tracking-[0.24em]">
+              you
+            </h2>
+            <span className="flex-1 h-px bg-accent/35" />
+          </div>
+        )}
         {/* header: cover + identity */}
         <div className="flex gap-[18px] items-start">
           <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
@@ -585,15 +614,43 @@ function Focus() {
             )}
           </div>
           <div>
-            <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-[7px]">
-              {type?.name}
-            </h2>
+            {!isSelf && (
+              // the kicker. On a card you point at, it also names your claim,
+              // in purple: purple at the top of a card always means you
+              <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-[7px]">
+                {type?.name}
+                {yourEdgesHere.length > 0 && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span className="text-accent">
+                      {[
+                        "you",
+                        ...yourEdgesHere.flatMap((r) =>
+                          r.label ? [r.label] : [],
+                        ),
+                      ].join(" · ")}
+                    </span>
+                  </>
+                )}
+              </h2>
+            )}
             <h1 className="font-serif text-[28px] leading-[1.1] tracking-tight text-ink">
               {entity?.name}
             </h1>
             <p className="font-serif text-muted text-sm leading-[1.62] mt-[11px]">
               {arrivalGloss ?? entity?.description}
             </p>
+            {/* the size of what you built — the short version; the full
+                statistics belong to a place of their own */}
+            {isSelf && (
+              <p className="font-mono text-muted text-[12px] opacity-70 mt-[11px]">
+                {entities.length}{" "}
+                {entities.length === 1 ? "entity" : "entities"} ·{" "}
+                {allRelationships.length}{" "}
+                {allRelationships.length === 1 ? "connection" : "connections"}
+              </p>
+            )}
           </div>
         </div>
 
@@ -678,7 +735,13 @@ function Focus() {
                           }}
                           className="group grid grid-cols-[94px_1fr] gap-4 items-baseline py-1.5 pl-0.5 border-l-2 border-transparent hover:border-accent transition-colors cursor-pointer"
                         >
-                          <span className="font-mono text-muted text-[12px] opacity-70 text-right truncate">
+                          {/* on your card the label is your own claim, so it
+                              carries your colour */}
+                          <span
+                            className={`font-mono text-[12px] opacity-70 text-right truncate ${
+                              isSelf ? "text-accent" : "text-muted"
+                            }`}
+                          >
                             {c.label}
                           </span>
                           <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
