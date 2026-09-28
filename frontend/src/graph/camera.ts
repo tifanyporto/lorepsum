@@ -1,9 +1,9 @@
 import { useEffect, useState, type RefObject } from "react";
 import type { Layout } from "./layout";
 
-// the reading panel floats over the right of the drawing: 420px wide, 3rem
-// from the edge
-const PANEL_RESERVE = 420 + 48;
+// the reading panel floats over the right of the drawing: 404px wide - the
+// width of the search above it - and 4rem from the edge
+export const PANEL_RESERVE = 404 + 64;
 // below this much uncovered width no offset saves the view - the panel
 // covers nearly everything, and that is a question of its own (#21)
 const MIN_UNCOVERED = 320;

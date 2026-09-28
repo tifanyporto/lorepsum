@@ -108,7 +108,7 @@ function Focus({
       )}
       {/* header: cover + identity */}
       <div className="flex gap-4.5 items-start">
-        <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
+        <div className="w-32 aspect-3/4 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
           {coverImage ? (
             <img
               className="w-full h-full object-cover"

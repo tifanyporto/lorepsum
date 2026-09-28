@@ -390,7 +390,7 @@ function App() {
         />
       )}
 
-      <div className="absolute top-17 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      <div className="absolute top-17 right-16 bottom-5 z-10 w-101 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
         {showSky && focusedSkyLore ? (
           <LorePanel
             key={focusedSkyLore.lore.id}

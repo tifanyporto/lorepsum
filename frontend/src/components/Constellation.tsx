@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { forceSimulation, forceLink, forceX, forceY } from "d3-force";
 import type { Relationship } from "../types";
 import { EDGE_CLEAR_RADIUS, edgePath, keepClear } from "../graph/geometry";
-import { useBoxSize, visibleCentre } from "../graph/camera";
+import { PANEL_RESERVE, useBoxSize, visibleCentre } from "../graph/camera";
 import { pageFont, placeLabels, spotsAround } from "../graph/labels";
 import type { GraphLink, GraphNode, Layout } from "../graph/layout";
 import YouNode from "./YouNode";
@@ -696,7 +696,7 @@ function Constellation({
         );
         // the side facing out of the screen - unless the card would run under
         // the panel or off the edge there
-        const uncovered = boxSize.width - 468;
+        const uncovered = boxSize.width - PANEL_RESERVE;
         let side: "left" | "right" = x < centre.x ? "left" : "right";
         if (side === "right" && x + 250 > uncovered) side = "left";
         if (side === "left" && x - 250 < 0) side = "right";
