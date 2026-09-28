@@ -230,14 +230,26 @@ A `lore` is the name of what unites a set of entities, and it is a **slice**, no
 
 The *Batman/Spider-Man* crossover is an entity belonging to both, connecting to each hero like any other connection. There is no "DC ↔ Marvel" link in the database: there is one well-placed comic. It is the founding sentence applied one level up.
 
-**What shows at the border.** Drawing the DC lore, an edge leaves the crossover comic heading for Spider-Man, who does not belong to this slice. He **appears, and appears marked**:
+**What shows at the border.** Drawing the DC lore, an edge leaves the crossover comic heading for Spider-Man, who does not belong to this slice. He **appears, and appears marked** — but quietly. The border says *there is more out there*; it does not compete with the slice for attention:
 
-- colour `beyond`;
+- colour `beyond`, drawn as a **hollow ring**, not a filled dot: someone who is there without belonging;
+- **no name at rest**. The ring and its stubs are enough to say that something is there;
 - **higher repulsion** in the simulation, so the outside node naturally falls to the periphery — "horizon" stops being a metaphor and becomes a position;
 - **edges that trail off**: two or three stubs leaving him, fading to nothing. In the grammar of a graph, an edge that does not end can only mean a node you are not seeing;
-- **slow breathing**: a ring expanding over ~6s against the 2.6s of the purple pulse. The rhythm carries the meaning — fast says *"you are here"*, slow says *"something breathes far away"*;
-- **glow**: a diffuse radial gradient bleeding in from off-frame, with a radius proportional to the size of the neighbouring lore. It announces scale **without stating a number**;
-- **on hover, a word and not a number:** `marvel ↗`. The name of a place is a door; "874 entities" is a spreadsheet.
+- **slow breathing**: a ring expanding over ~6s against the 2.6s of the focus pulse. The rhythm carries the meaning — fast says *"you are here"*, slow says *"something breathes far away"*;
+- **glow**: a diffuse radial gradient bleeding in from off-frame, with a radius proportional to the size of the neighbouring lore. It announces scale **without stating a number**.
+
+**A border node next to the focus** follows the rule every neighbour follows: it is **named**. It keeps its colour — the name is written in `beyond` and the ring grows stronger — so a neighbour from elsewhere never passes for one from here.
+
+**The card: where else he lives.** Hovering a border node opens a small card anchored to it, on the outer side of the screen, joined to the node by a hairline. Flat like everything else: the canvas, a hairline in `beyond`, no shadow.
+
+- the title is the **entity's name** — the node's own label steps aside while the card is open;
+- under `ALSO IN`, **the other lores it belongs to, each one a door**. The name of a place is a door; "874 entities" is a spreadsheet;
+- **at most five**, the lores that share the most with the one open coming first — the likeliest doors on top. Past five, `+ N more` **expands the card in place**, with its own scroll. The card never sends you out of the constellation;
+- a **click or a tap pins the card open**; it closes by choosing a door or clicking elsewhere. One rule for the mouse and for touch, where there is no hover;
+- **an entity with a single other home still gets the card.** Nobody crosses by accident: a crossing always starts from a line in a card.
+
+Rejected on the way: naming the other lores as floating words at the tips of the stubs — one stub per lore reads well with three homes and becomes a hedgehog with twenty; and listing them only in the reading panel — opening the card to choose a door breaks the immersion the crossing exists to keep.
 
 **The crossing.**
 
@@ -245,7 +257,7 @@ The *Batman/Spider-Man* crossover is an entity belonging to both, connecting to 
 
 That fixed point is what separates a crossing from a page change:
 
-1. the blue turns purple;
+1. the blue turns into the focus colour (`here`) — purple is reserved for the you-node;
 2. the old lore loses opacity and **inflates outward** from the anchor;
 3. the new lore enters **shrunk toward the anchor** and settles around it;
 4. the pulse is born on the anchored node;
@@ -254,7 +266,11 @@ That fixed point is what separates a crossing from a page change:
 
 Arriving in Marvel, **Batman becomes the blue of the horizon**. The door works both ways with no new mechanism: he is simply an entity that does not belong to the lore you are looking at.
 
-**What this will require:** a `lore` table and an `entity_lore` table; every read of the graph gains a slice; and an entity **with no lore** needs an answer — is it orphaned, or is there a default lore?
+**The default lore is the Nebula**, the home of every entity that has no other. The account points at it (`users.nebula_lore_id`), so renaming it changes nothing; new entities arrive in it; and it can never be deleted.
+
+**Where the app opens.** The first visit opens on the **Nebula** — for a new account it is everything there is. After that, the app opens on **the list of the account's lores**, still being designed.
+
+**What this still requires:** every read of the graph gains a slice.
 
 ### The atlas — seeing the whole collection
 
