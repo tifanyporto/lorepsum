@@ -18,9 +18,11 @@ You do not browse a list. You wander.
 
 ## The screen
 
-Two panels that never leave each other.
+**Lores** slice the collection. A lore is what unites a set of entities — a show, a universe, the songs you love — and an entity can belong to several at once. Lores are never linked to each other: they touch when they share an entity. A Batman/Spider-Man crossover is one comic in two lores, and that is the whole mechanism.
 
-**The constellation** is the whole graph — every entity a dot, every relationship a line. The layout is computed **once**, when the app opens, and never again. That is what turns it from a drawing that redraws itself into a **place**: you drag it, you zoom it, and the framing you built survives your clicks. Click a node and the camera glides to it, so you see *where you came from* on the way.
+**The sky** is where the app opens: you in the centre, every lore around you drawn as its own constellation in miniature. The closer a lore sits, the more of it is yours. The entities two lores share hang between them as bridges. Click a lore to read about it; click again and the camera dives into it.
+
+**The constellation** is one lore — every entity a dot, every relationship a line, with you at the centre. The layout is computed **once** and never again. That is what turns it from a drawing that redraws itself into a **place**: you drag it, you zoom it, you pull a node and watch its connections follow, and the framing you built survives your clicks. Click a node and the camera glides to it, so you see *where you came from* on the way. At the edge, hollow blue rings are the entities of other lores tied to this one; their card lists where else they live, and each of those lores is a door. Cross one, and the node you crossed through stays still while the world dissolves around it.
 
 **The reading panel** is the museum label — cover, type, name, description, and the entity's connections grouped by what they point at, collapsed by default. A card opens as an *index*:
 
@@ -44,9 +46,9 @@ Context lives on the **edge**. Arrive at an entity *through* a connection and yo
 
 Paper by default, night as the alternate — same drawing, only the palette swaps. **Fraunces** carries content, **IBM Plex Mono** carries labels: serif is content, mono is chrome.
 
-The accent purple is **reserved** — the focused node, what touches it, and hover. Nothing else. Colour means something here; it is never decoration. No gradients, no shadows, no stacked cards.
+Three colours, three meanings, never swapped: **purple is you** — the you-node and your claims; **gold is where you are** — the focus and what touches it; **blue is outside** — whatever belongs to another lore. Colour means something here; it is never decoration. No shadows, no stacked cards, and one gradient, on purpose.
 
-The mark is a solid centre node radiating four connections, one of them in the accent. It is the you-node, which is also where the app lands.
+The mark is a solid centre node radiating four connections, one of them in the accent. It is the you-node, which is also the centre of every lore.
 
 Full reasoning — including everything that was rejected and why — in [`docs/design.md`](docs/design.md).
 
@@ -62,7 +64,7 @@ PostgreSQL
 
 Working software, single user, in active development. Not deployed.
 
-Next up: the you-node — your profile is not a settings screen, it is the Focus of yourself, and it is where the app opens. After that, **lores**: a slice of the graph rather than a container, so an entity can belong to several at once. Lores are never linked to each other; they touch when they share an entity. A Batman/Spider-Man crossover is one comic in two lores, and that is the whole mechanism.
+In: the you-node — your profile is not a settings screen, it is the Focus of yourself, at the centre of everything — and lores, with the sky, the border and the crossing. What comes next lives in the [issues](https://github.com/tifanyporto/lorepsum/issues).
 
 Native Windows, Android and iOS clients are planned after the web app. No Electron.
 

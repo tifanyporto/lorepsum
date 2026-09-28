@@ -1,5 +1,5 @@
-// The you-node, drawn at the origin of whatever group holds it. Placeholder
-// shape until #6 decides what it looks like.
+// The you-node, drawn at the origin of whatever group holds it: two open arcs
+// around a diamond (docs/design.md, section 3).
 function YouNode({
   focused,
   onClick,
