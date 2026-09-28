@@ -243,9 +243,17 @@ function Constellation({
   // radius, so a long edge dissolves before it crosses the whole drawing while
   // a short one stays solid — the connection reads near the node, not as a
   // streak across the sky.
+  //
+  // Only to the lore's own entities. Someone at the border is reached the way
+  // the lore reaches them - through the entity of this lore they are tied to -
+  // never straight from you: in Songs I Love, Sheldon hangs off Soft Kitty,
+  // not off the you-node, whatever you think of him elsewhere.
+  const own = new Set(layout.nodes.map((n) => n.id));
   const selfEdges =
     selfId != null
-      ? allRelationships.filter((r) => r.source_id === selfId)
+      ? allRelationships.filter(
+          (r) => r.source_id === selfId && own.has(r.target_id),
+        )
       : [];
   const selfEdgeReach = Math.max(
     1,
