@@ -268,7 +268,18 @@ Arriving in Marvel, **Batman becomes the blue of the horizon**. The door works b
 
 **The default lore is the Nebula**, the home of every entity that has no other. The account points at it (`users.nebula_lore_id`), so renaming it changes nothing; new entities arrive in it; and it can never be deleted.
 
-**Where the app opens.** The first visit opens on the **Nebula** — for a new account it is everything there is. After that, the app opens on **the list of the account's lores**, still being designed.
+**Where the app opens.** The first visit opens on the **Nebula** — for a new account it is everything there is. After that, the app opens on **the sky of lores**.
+
+**The sky of lores.** Not a list: nobody browses their lores, they wander among them. The you-node sits in the centre, as it does inside every lore, and the lores float around it, each one drawn as its own constellation in miniature.
+
+- **the miniature is the lore's own layout** — the same positions its constellation uses, only smaller. Its size follows the number of entities without writing it.
+- **distance says how much of the lore is yours.** The more of your connections point into a lore, the closer it sits. The purple lines are exactly those connections, reaching into the miniatures. A lore none of them touches sits on the outer edge, placed only by what it shares.
+- **bridges.** An entity that lives in two lores appears between them as a small dot, joined to its place in each. Unnamed at rest — the rule of the border; hovering names it and the lores it joins. The lores are still never linked: the bridge is an entity.
+- **a click focuses, it does not enter.** As with an entity in the graph, the first click focuses the lore and the reading panel shows it: its types and how many of each, and which lores it touches and through how many entities. Entering is the `enter ↗` in the panel, or a second click.
+- **with nothing focused, the panel shows you** — you are what sits in the centre.
+- **entering is a dive.** One continuous zoom: the miniature grows until it is the constellation and the other lores leave by the edges. The you-node never moves; the lore comes to settle around it. Leaving is the same zoom run backwards.
+
+Rejected on the way: **cards with the lore's constellation as a cover** — a display case, which is the atlas's job; and **a typographic index** — the fastest to read and the one that most turns the collection into a spreadsheet. Its content survived: it is what the panel shows for a focused lore.
 
 **What this still requires:** every read of the graph gains a slice.
 
