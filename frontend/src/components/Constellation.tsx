@@ -3,6 +3,7 @@ import { forceSimulation, forceLink, forceX, forceY } from "d3-force";
 import type { Relationship } from "../types";
 import { EDGE_CLEAR_RADIUS, edgePath, keepClear } from "../graph/geometry";
 import { useBoxSize, visibleCentre } from "../graph/camera";
+import { pageFont, placeLabels, spotsAround } from "../graph/labels";
 import type { GraphLink, GraphNode, Layout } from "../graph/layout";
 import YouNode from "./YouNode";
 
@@ -223,6 +224,45 @@ function Constellation({
   if (selfId != null && focusedId === selfId)
     selfEdges.forEach((r) => neighborIds.add(r.target_id));
 
+  // The names on screen, and where each one goes. The focus is placed first
+  // and keeps the spot under its node; then whatever is under the pointer;
+  // then the neighbours, moving around the names already there. None ever
+  // covers another: a neighbour with nowhere to go waits for the hover.
+  const nodeRadius = (n: GraphNode) => (n.id === focusedId ? 9 : 6);
+  const family = pageFont();
+  const rank = (n: GraphNode) =>
+    n.id === focusedId ? 0 : n.id === hoveredId || n.id === pulledId ? 1 : 2;
+  const labels = placeLabels(
+    graphNodes
+      .filter(
+        (n) =>
+          n.id === focusedId ||
+          n.id === hoveredId ||
+          n.id === pulledId ||
+          neighborIds.has(n.id),
+      )
+      .sort((a, b) => rank(a) - rank(b))
+      .map((n) => ({
+        key: String(n.id),
+        x: n.x ?? 0,
+        y: n.y ?? 0,
+        r: nodeRadius(n),
+        lines: [{ text: n.name, size: 10, family }],
+        spots: spotsAround(nodeRadius(n), 10),
+        must: rank(n) < 2,
+      })),
+    [
+      ...graphNodes.map((n) => ({
+        key: String(n.id),
+        x: n.x ?? 0,
+        y: n.y ?? 0,
+        r: nodeRadius(n) + 1,
+      })),
+      // the you-node's arcs
+      ...(selfId != null ? [{ x: 0, y: 0, r: 34 }] : []),
+    ],
+  );
+
   // what a click on a node does: focus it, answer for the arrival, and glide
   // the camera to it. The camera aims at the node's home, so a click during
   // a pull's return lands where the node is going, not where it passes.
@@ -401,8 +441,7 @@ function Constellation({
             // the node in your hand reads as hovered for the whole pull, even
             // when the pointer outruns it
             const isHovered = n.id === hoveredId || n.id === pulledId;
-            const showName = isFocused || isNeighbor || isHovered;
-            const r = isFocused ? 9 : 6;
+            const r = nodeRadius(n);
             return (
               <g
                 key={n.id}
@@ -461,25 +500,36 @@ function Constellation({
                     };
                   }}
                 />
-                {showName && (
-                  <text
-                    x={n.x}
-                    y={(n.y ?? 0) + r + 14}
-                    textAnchor="middle"
-                    fill={
-                      isFocused ? "var(--color-ink)" : "var(--color-muted)"
-                    }
-                    fontSize={10}
-                    stroke="var(--color-canvas)"
-                    strokeWidth={3}
-                    paintOrder="stroke"
-                  >
-                    {n.name}
-                  </text>
-                )}
               </g>
             );
           })}
+
+          {/* the names, over every node, each where placeLabels put it */}
+          <g className="pointer-events-none">
+            {graphNodes.map((n) => {
+              const at = labels.get(String(n.id));
+              if (at === undefined) return null;
+              return (
+                <text
+                  key={n.id}
+                  x={at.x}
+                  y={at.y}
+                  textAnchor={at.anchor}
+                  fill={
+                    n.id === focusedId
+                      ? "var(--color-ink)"
+                      : "var(--color-muted)"
+                  }
+                  fontSize={10}
+                  stroke="var(--color-canvas)"
+                  strokeWidth={3}
+                  paintOrder="stroke"
+                >
+                  {n.name}
+                </text>
+              );
+            })}
+          </g>
 
           {/* the you-node: pinned at the origin, outside the simulation */}
           {selfId != null && (

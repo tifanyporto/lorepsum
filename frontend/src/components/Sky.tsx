@@ -8,6 +8,7 @@ import {
   type SkyCamera,
 } from "../graph/camera";
 import type { Sky as SkyData } from "../graph/sky";
+import { placeLabels } from "../graph/labels";
 import YouNode from "./YouNode";
 
 // the camera the person moves: the sky point at the centre, and a zoom on top
@@ -204,6 +205,99 @@ function Sky({
   const loreName = (id: number) =>
     sky.lores.find((s) => s.lore.id === id)?.lore.name ?? "";
 
+  // Where every name goes, so that none covers another. Each lore's name
+  // prefers the side away from you - bridges run between lores, so what lies
+  // outward is free - then the other side, then beside the miniature. The
+  // lore in focus is placed first, then the one under the pointer, then the
+  // largest. A hovered bridge names itself last, around what is already there.
+  const serif = '"Fraunces", Georgia, serif';
+  const mono = '"IBM Plex Mono", monospace';
+  const loreRank = (id: number) =>
+    id === focusedLoreId ? 0 : id === hoveredLoreId ? 1 : 2;
+  const bridgeAt = hovered ? toScreen(hovered.x, hovered.y) : null;
+  const labels = placeLabels(
+    [
+      ...[...sky.lores]
+        .sort(
+          (a, b) =>
+            loreRank(a.lore.id) - loreRank(b.lore.id) ||
+            b.layout.nodes.length - a.layout.nodes.length,
+        )
+        .map((s) => {
+          const o = toScreen(s.x, s.y);
+          const sigma = s.scale * camera.k;
+          const radius = s.radius * camera.k;
+          // clear of the rim and of any straggler reaching past it
+          const xs = s.layout.nodes.map((n) => n.x * sigma);
+          const ys = s.layout.nodes.map((n) => n.y * sigma);
+          const top = Math.min(-radius, ...ys);
+          const bottom = Math.max(radius, ...ys);
+          const left = Math.min(-radius, ...xs);
+          const right = Math.max(radius, ...xs);
+          const over = { dx: 0, dy: top - 32, anchor: "middle" as const };
+          const under = { dx: 0, dy: bottom + 24, anchor: "middle" as const };
+          const sides = [
+            { dx: right + 12, dy: 5, anchor: "start" as const },
+            { dx: left - 12, dy: 5, anchor: "end" as const },
+          ];
+          const count = s.layout.nodes.length;
+          return {
+            key: `lore-${s.lore.id}`,
+            x: o.x,
+            y: o.y,
+            r: radius,
+            // room for the line that appears under the name on hover, so a
+            // hover never moves a name
+            lines: [
+              { text: s.lore.name, size: nameSize, family: serif },
+              {
+                text: `${count} ${count === 1 ? "entity" : "entities"} · enter ↗`,
+                size: Math.max(10, nameSize - 4),
+                family: mono,
+              },
+            ],
+            spots:
+              o.y < youAtRest.y - radius * 0.5
+                ? [over, under, ...sides]
+                : [under, over, ...sides],
+            must: true,
+          };
+        }),
+      ...(hovered && bridgeAt
+        ? [
+            {
+              key: "bridge",
+              x: bridgeAt.x,
+              y: bridgeAt.y,
+              r: 4,
+              lines: [
+                { text: hovered.name, size: 13, family: serif },
+                {
+                  text: hovered.loreIds.map(loreName).join(" · "),
+                  size: 11,
+                  family: mono,
+                },
+              ],
+              spots: [
+                { dx: 0, dy: -26, anchor: "middle" as const },
+                { dx: 0, dy: 20, anchor: "middle" as const },
+                { dx: 10, dy: -4, anchor: "start" as const },
+                { dx: -10, dy: -4, anchor: "end" as const },
+              ],
+              must: true,
+            },
+          ]
+        : []),
+    ],
+    [
+      { x: you.x, y: you.y, r: 36 * youScale },
+      ...sky.lores.map((s) => {
+        const o = toScreen(s.x, s.y);
+        return { key: `lore-${s.lore.id}`, x: o.x, y: o.y, r: s.radius * camera.k };
+      }),
+    ],
+  );
+
   return (
     <div className="absolute inset-0">
       <svg
@@ -326,17 +420,9 @@ function Sky({
           // node's edges do. It fades back to ink as a dive enters it, so the
           // constellation it becomes is the one drawn inside.
           const ink = tint(focused ? 1 - inside : 0);
-          // the name sits above or below, on the side away from you: bridges
-          // run between lores, so what lies outward is free. Never to the
-          // side, where a long name would run under the panel.
-          // Clear of the rim and of any straggler reaching past it.
-          const above = o.y < youAtRest.y - radius * 0.5;
-          const ys = s.layout.nodes.map((n) => n.y * sigma);
-          const top = Math.min(-radius, ...ys);
-          const bottom = Math.max(radius, ...ys);
-          const label = {
+          const label = labels.get(`lore-${id}`) ?? {
             x: o.x,
-            y: above ? o.y + top - 32 : o.y + bottom + 24,
+            y: o.y + radius + 24,
             anchor: "middle" as const,
           };
           return (
@@ -477,12 +563,12 @@ function Sky({
         )}
 
         {/* a hovered bridge names itself and the lores it joins */}
-        {hovered !== undefined && inside === 0 && (
+        {hovered !== undefined && inside === 0 && labels.has("bridge") && (
           <g className="pointer-events-none">
             <text
-              x={toScreen(hovered.x, hovered.y).x}
-              y={toScreen(hovered.x, hovered.y).y - 26}
-              textAnchor="middle"
+              x={labels.get("bridge")?.x}
+              y={labels.get("bridge")?.y}
+              textAnchor={labels.get("bridge")?.anchor}
               className="font-serif"
               fontSize={13}
               fill="var(--color-ink)"
@@ -493,9 +579,9 @@ function Sky({
               {hovered.name}
             </text>
             <text
-              x={toScreen(hovered.x, hovered.y).x}
-              y={toScreen(hovered.x, hovered.y).y - 11}
-              textAnchor="middle"
+              x={labels.get("bridge")?.x}
+              y={(labels.get("bridge")?.y ?? 0) + 15}
+              textAnchor={labels.get("bridge")?.anchor}
               className="font-mono"
               fontSize={11}
               fill="var(--color-muted)"
