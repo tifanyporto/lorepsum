@@ -225,27 +225,6 @@ function App() {
           <Logo className="w-10 h-10" />
           <Wordmark />
         </a>
-        {/* where you are. Inside a lore, "lores" is the way back up */}
-        <nav className="shrink-0 flex items-baseline gap-2">
-          {openLore && journey === null ? (
-            <>
-              <button
-                onClick={rise}
-                className="font-mono text-muted text-[11px] uppercase tracking-[0.22em] cursor-pointer hover:text-here transition-colors"
-              >
-                lores
-              </button>
-              <span className="font-mono text-line text-[11px]">/</span>
-              <span className="font-serif text-ink text-[16px]">
-                {openLore.name}
-              </span>
-            </>
-          ) : (
-            <span className="font-mono text-ink text-[11px] uppercase tracking-[0.22em]">
-              lores
-            </span>
-          )}
-        </nav>
         <div className="w-full">
           <Search
             entities={entities}
@@ -281,7 +260,31 @@ function App() {
         />
       )}
 
-      <div className="absolute top-17 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      {/* where you are, right above what you are reading. Its own strip
+          over the panel, so it never competes with the search for the
+          topbar, however narrow the window. Inside a lore, "lores" is the way
+          back up. */}
+      <nav className="absolute top-19 right-12 z-10 w-105 px-6 flex items-baseline gap-2 min-w-0">
+        {openLore && journey === null ? (
+          <>
+            <button
+              onClick={rise}
+              className="shrink-0 font-mono text-muted text-[11px] uppercase tracking-[0.22em] cursor-pointer hover:text-here transition-colors"
+            >
+              lores
+            </button>
+            <span className="shrink-0 font-mono text-line text-[11px]">/</span>
+            <span className="font-serif text-ink text-[16px] truncate">
+              {openLore.name}
+            </span>
+          </>
+        ) : (
+          <span className="font-mono text-ink text-[11px] uppercase tracking-[0.22em]">
+            lores
+          </span>
+        )}
+      </nav>
+      <div className="absolute top-26 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
         {showSky && focusedSkyLore ? (
           <LorePanel
             key={focusedSkyLore.lore.id}
