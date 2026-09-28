@@ -1,4 +1,7 @@
-"""Fill a database with a small Big Bang Theory collection, for development.
+"""Fill a database with a small collection, for development: The Big Bang
+Theory in full, and a few smaller lores around it so the sky has something to
+show - lores that share entities, one none of your connections reaches, and
+one just created and still empty.
 
 The schema comes from Alembic; this only adds content. Run it against a database
 that has already been migrated:
@@ -38,7 +41,7 @@ if db.query(Entity).count() > 0:
     raise SystemExit("this database already holds entities; pass --reset to replace them")
 
 # ------------------------------------------------------------------ types
-TYPES = ["Character", "Place", "Object", "Concept", "Organization", "Person"]
+TYPES = ["Character", "Place", "Object", "Concept", "Organization", "Person", "Film", "Music"]
 types = {}
 for name in TYPES:
     t = EntityType(name=name)
@@ -90,8 +93,54 @@ ENTITIES = [
     ("Germs", "Concept", "Organisms too small to see and consequential enough to reorganise an entire life around. The fear of them is not irrational so much as unbounded: there is no amount of washing that constitutes enough."),
 ]
 
+# the other lores, smaller. Each list is only what that lore adds: an entity
+# that lives in two lores is written once, and joined to the second below.
+MORE = {
+    "DC Comics": [
+        ("Batman", "Character", "A man who answered one bad night by deciding that every night would be his. The costume is the least strange part of the arrangement."),
+        ("The Joker", "Character", "A villain with no fixed origin, because he tells a different one every time he is asked. He needs the Batman more than anyone in Gotham does."),
+        ("Harley Quinn", "Character", "A psychiatrist who went into Arkham to treat a patient and came out as his accomplice, and later as nobody's."),
+        ("Superman", "Character", "The strongest being on Earth, raised on a Kansas farm into the most polite one. His whole difficulty is restraint."),
+        ("Lex Luthor", "Character", "A genius who cannot forgive Superman for being admired without having earned it."),
+        ("Wonder Woman", "Character", "An Amazon who left an island at peace to argue with a world at war, and who keeps expecting better of people just often enough to be right."),
+        ("The Flash", "Character", "The fastest man alive, and still somehow late. Also the costume four friends once chose for the same party without consulting each other."),
+        ("Gotham City", "Place", "A city where it is always night in the comics and always raining in the films. It breeds its villains and the one man who refuses to leave."),
+        ("Metropolis", "Place", "Gotham turned inside out: daylight, glass, and a sky someone is always flying through."),
+        ("Arkham Asylum", "Place", "Where Gotham keeps what it cannot cure. The doors have always been more of a suggestion."),
+        ("The Batcave", "Place", "The basement of a mansion, grown into a second life with better equipment than the first."),
+        ("Justice League", "Organization", "People who could each save the world alone, meeting regularly to argue about how."),
+        ("Kryptonite", "Object", "A piece of a dead planet, and the only thing that makes the strongest man on Earth ordinary."),
+        ("Vengeance", "Concept", "Wanting the past to be paid for. Called justice when it wears a costume, and something else when it does not."),
+    ],
+    "Studio Ghibli": [
+        ("Hayao Miyazaki", "Person", "An animator who draws wind as carefully as faces, and who has retired several times without once managing it."),
+        ("Spirited Away", "Film", "A girl crosses into a bathhouse for spirits and has to work her way back out, one name at a time."),
+        ("My Neighbor Totoro", "Film", "Two sisters, a mother in hospital, and a forest spirit waiting at a bus stop in the rain. Nothing bad happens, which is its bravest decision."),
+        ("Princess Mononoke", "Film", "A war between a forest and an ironworks in which the film refuses, to the end, to choose a side."),
+        ("Howl's Moving Castle", "Film", "A young woman cursed into old age finds that it suits her better than being young did."),
+        ("Chihiro", "Character", "Ten years old, sulking in the back seat, and by the end the steadiest person in the spirit world."),
+        ("No-Face", "Character", "A spirit that becomes whatever it swallows, lonely enough to try to buy company with gold that is not real."),
+        ("Totoro", "Character", "Large, grey, mostly asleep, and visible only to the people who need him to be."),
+        ("San", "Character", "Raised by wolves, and furious at people for reasons the film takes seriously."),
+        ("The Bathhouse", "Place", "Where the spirits come to rest, run like a factory by a witch with enormous hands."),
+    ],
+    "Songs I Love": [
+        ("Bohemian Rhapsody", "Music", "Six minutes that refuse to be one song, and ended up everyone's anyway."),
+        ("Under Pressure", "Music", "Two voices built for stadiums, meeting in a small room and leaving the bass line behind for everyone."),
+        ("Queen", "Organization", "Four people who could each have been the band, and chose to be one."),
+        ("Freddie Mercury", "Person", "Born in Zanzibar, schooled in India, and the owner of a voice made for rooms larger than any that existed yet."),
+        ("David Bowie", "Person", "A musician who changed his face every few years so the songs would not have to repeat themselves."),
+        ("Clube da Esquina", "Music", "An album named after a street corner where friends met to play, and the sound of a whole city in the seventies."),
+        ("Milton Nascimento", "Person", "A voice that sounds as if it were coming from further away than the room it is in."),
+        ("Lô Borges", "Person", "Barely twenty when the corner became an album, and the one who kept writing the melodies nobody else would have tried."),
+    ],
+    "Nebula": [
+        ("Nostalgia", "Concept", "Missing a place that no longer exists in the form you remember, and sometimes never did."),
+    ],
+}
+
 ents = {}
-for name, type_name, description in ENTITIES:
+for name, type_name, description in ENTITIES + [e for more in MORE.values() for e in more]:
     e = Entity(
         name=name,
         entity_type_id=types[type_name].id,
@@ -198,6 +247,60 @@ R = [
     ("Leonard Hofstadter", "lives with", "The Roommate Agreement", 2, None),
     ("Raj Koothrappali", "studies", "String Theory", 1, None),
     ("Howard Wolowitz", "mocks", "String Theory", 2, "The only field that cannot be tested, defended by the only man who cannot be corrected."),
+
+    # the costume party: four Flashes, and the reason The Flash lives in both lores
+    ("Sheldon Cooper", "dressed as", "The Flash", 2, "So did the other three, which none of them could let go of."),
+    ("Leonard Hofstadter", "dressed as", "The Flash", 1, None),
+    ("The Comic Center of Pasadena", "stocks", "Batman", 1, None),
+
+    # DC Comics
+    ("dev", "grew up with", "Batman", 2, "The first one who made the dark look like a choice."),
+    ("dev", "played", "Arkham Asylum", 2, "Every corridor of it, more than once."),
+    ("dev", "understands", "Vengeance", 1, "Without approving of it."),
+    ("Batman", "fights", "The Joker", 3, "Neither would know who he was without the other."),
+    ("Batman", "protects", "Gotham City", 3, None),
+    ("Batman", "lives in", "The Batcave", 2, None),
+    ("Batman", "member of", "Justice League", 2, None),
+    ("Batman", "driven by", "Vengeance", 3, "He calls it justice. The cave suggests otherwise."),
+    ("The Joker", "escapes", "Arkham Asylum", 3, "Routinely, and never quite the same way twice."),
+    ("Harley Quinn", "worked at", "Arkham Asylum", 2, None),
+    ("Harley Quinn", "in love with", "The Joker", 2, "Until she was not, which is the better story."),
+    ("Superman", "protects", "Metropolis", 3, None),
+    ("Superman", "weakened by", "Kryptonite", 3, None),
+    ("Superman", "member of", "Justice League", 2, None),
+    ("Lex Luthor", "hates", "Superman", 3, "Envy dressed as principle."),
+    ("Lex Luthor", "keeps", "Kryptonite", 2, None),
+    ("Wonder Woman", "member of", "Justice League", 2, None),
+    ("The Flash", "member of", "Justice League", 2, None),
+    ("Arkham Asylum", "stands in", "Gotham City", 2, None),
+    ("Gotham City", "mirrors", "Metropolis", 1, "Night and day, drawn by the same company."),
+
+    # Studio Ghibli - nothing of yours reaches it yet, so it sits on the edge of the sky
+    ("Hayao Miyazaki", "directed", "Spirited Away", 3, None),
+    ("Hayao Miyazaki", "directed", "My Neighbor Totoro", 3, None),
+    ("Hayao Miyazaki", "directed", "Princess Mononoke", 3, None),
+    ("Hayao Miyazaki", "directed", "Howl's Moving Castle", 2, None),
+    ("Chihiro", "appears in", "Spirited Away", 3, None),
+    ("Chihiro", "works at", "The Bathhouse", 2, "For a witch who took her name as payment."),
+    ("No-Face", "follows", "Chihiro", 2, "The only person who offered him nothing, which is why he wanted it."),
+    ("No-Face", "haunts", "The Bathhouse", 1, None),
+    ("Totoro", "appears in", "My Neighbor Totoro", 3, None),
+    ("San", "appears in", "Princess Mononoke", 3, None),
+    ("Chihiro", "earns", "Friendship", 2, "Not given, and not bought - which is the whole point of the bathhouse."),
+    ("Totoro", "offers", "Friendship", 1, None),
+
+    # Songs I Love
+    ("dev", "sings along to", "Bohemian Rhapsody", 2, "Every part, including the ones written for a choir."),
+    ("dev", "grew up with", "Clube da Esquina", 3, "The sound of the city before the city was a choice."),
+    ("Queen", "recorded", "Bohemian Rhapsody", 3, None),
+    ("Queen", "recorded", "Under Pressure", 2, None),
+    ("Freddie Mercury", "fronted", "Queen", 3, None),
+    ("Freddie Mercury", "sang", "Under Pressure", 2, None),
+    ("David Bowie", "sang", "Under Pressure", 2, "Half of it, in a studio he happened to be passing."),
+    ("Milton Nascimento", "recorded", "Clube da Esquina", 3, None),
+    ("Lô Borges", "recorded", "Clube da Esquina", 3, None),
+    ("Clube da Esquina", "born in", "Belo Horizonte", 3, "On an actual corner, in Santa Tereza."),
+    ("Clube da Esquina", "carries", "Nostalgia", 2, None),
 ]
 
 # -------------------------------------------------------------------- lores
@@ -209,6 +312,11 @@ R = [
 LORES = [
     ("Nebula", "Where things arrive before they belong anywhere. It starts as all you have, and becomes all that is left over."),
     ("The Big Bang Theory", "Four physicists, a waitress across the hall, and the apartment that held them."),
+    ("DC Comics", "Two cities, one at night and one by day, and the people who cannot leave either of them alone."),
+    ("Studio Ghibli", "Films where the wind is a character and nobody is entirely the villain."),
+    ("Songs I Love", "What plays when nobody else is choosing."),
+    # just created, nothing in it yet: the sky has to show that too
+    ("Books to Read", None),
 ]
 
 lores = {}
@@ -231,14 +339,32 @@ dev.nebula_lore_id = lores["Nebula"].id
 # in Nebula, where things that belong to no particular slice arrive.
 FORA_DA_SERIE = {"dev", "Belo Horizonte"}
 
-for nome, e in ents.items():
+for nome, _, _ in ENTITIES:
     if nome in FORA_DA_SERIE:
         continue
-    db.add(EntityLore(entity_id=e.id, lore_id=lores["The Big Bang Theory"].id))
+    db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores["The Big Bang Theory"].id))
 
-# these sit in both, which is the whole point of a slice
-for nome in ("Sarcasm", "Friendship", "Bazinga", "Belo Horizonte"):
-    db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores["Nebula"].id))
+# each smaller lore holds what its list added
+for lore_name, more in MORE.items():
+    for nome, _, _ in more:
+        db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores[lore_name].id))
+
+# these sit in more than one, which is the whole point of a slice. Two lores
+# that share an entity touch in the sky, with a bridge between them
+BOTH = [
+    ("Sarcasm", "Nebula"),
+    ("Friendship", "Nebula"),
+    ("Bazinga", "Nebula"),
+    ("Belo Horizonte", "Nebula"),
+    ("The Flash", "The Big Bang Theory"),
+    ("Vengeance", "Nebula"),
+    ("Soft Kitty", "Songs I Love"),
+    ("Belo Horizonte", "Songs I Love"),
+    # three homes at once
+    ("Friendship", "Studio Ghibli"),
+]
+for nome, lore_name in BOTH:
+    db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores[lore_name].id))
 
 # --------------------------------------------------------------- the dates
 # The system keeps the structure, the person names the meaning: there is no
