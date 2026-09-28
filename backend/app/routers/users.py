@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
+from app.dependencies import current_user
 from app.models import Entity, User
 from app.schemas import UserCreate, UserRead, UserUpdate
 from sqlalchemy.exc import IntegrityError
@@ -56,20 +57,6 @@ def create_user(payload: UserCreate, db = Depends(get_db)):
         raise refusal(err, db, payload.self_entity_id) from err
     db.refresh(new_user)
     return new_user
-
-def current_user(db = Depends(get_db)) -> User:
-    """Who is asking. Every endpoint that needs an owner depends on this.
-
-    Temporary: with no session there is nothing to read, so it is fixed on the
-    dev user - by email, the one thing about a person the account itself owns.
-    It becomes a session read once login exists (#14), and not one caller
-    changes when it does.
-    """
-    user = db.query(User).filter(User.email == "dev@lorepsum.local").first()
-    if user is None:
-        raise HTTPException(status_code=404, detail="user not found")
-    return user
-
 
 @router.get("/users/me", response_model=UserRead)
 def get_current_user(user: User = Depends(current_user)):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
 from app.models import Entity, EntityImage, EntityLore, User
-from app.routers.users import current_user
+from app.dependencies import current_user
 from app.schemas import EntityRead, EntityCreate, EntityUpdate
 from sqlalchemy.exc import IntegrityError
 from psycopg2 import errorcodes

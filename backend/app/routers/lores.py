@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from app.database import get_db
 from app.models import Lore, Entity, EntityLore, User
-from app.routers.users import current_user
+from app.dependencies import current_user
 from app.schemas import (
     LoreCreate,
     LoreRead,
