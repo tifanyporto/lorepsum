@@ -321,7 +321,7 @@ function Focus() {
       : selfEdges.filter((r) => r.target_id === entity.id);
   return (
     <div className="h-screen relative overflow-hidden bg-desk">
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none [&>*]:pointer-events-auto">
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none *:pointer-events-auto">
         {/* lockup: symbol + wordmark, the symbol matching the text box height */}
         <a
           href="/"
@@ -587,7 +587,7 @@ function Focus() {
           </g>
         </svg>
       </div>
-      <div className="absolute top-[68px] right-12 bottom-5 z-10 w-[420px] overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      <div className="absolute top-17 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
         {/* on your own card the type gives way to YOU, set above the whole
             header in the grammar of the panel's section headers — mono label,
             hairline running to the edge — but in your purple and a size up,
@@ -601,7 +601,7 @@ function Focus() {
           </div>
         )}
         {/* header: cover + identity */}
-        <div className="flex gap-[18px] items-start">
+        <div className="flex gap-4.5 items-start">
           <div className="w-32 h-32 border border-line rounded-md bg-desk overflow-hidden flex shrink-0 items-center justify-center">
             {coverImage ? (
               <img
@@ -617,7 +617,7 @@ function Focus() {
             {!isSelf && (
               // the kicker. On a card you point at, it also names your claim,
               // in purple: purple at the top of a card always means you
-              <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-[7px]">
+              <h2 className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em] mb-1.75">
                 {type?.name}
                 {yourEdgesHere.length > 0 && (
                   <>
@@ -638,13 +638,13 @@ function Focus() {
             <h1 className="font-serif text-[28px] leading-[1.1] tracking-tight text-ink">
               {entity?.name}
             </h1>
-            <p className="font-serif text-muted text-sm leading-[1.62] mt-[11px]">
+            <p className="font-serif text-muted text-sm leading-[1.62] mt-2.75">
               {arrivalGloss ?? entity?.description}
             </p>
             {/* the size of what you built — the short version; the full
                 statistics belong to a place of their own */}
             {isSelf && (
-              <p className="font-mono text-muted text-[12px] opacity-70 mt-[11px]">
+              <p className="font-mono text-muted text-[12px] opacity-70 mt-2.75">
                 {entities.length}{" "}
                 {entities.length === 1 ? "entity" : "entities"} ·{" "}
                 {allRelationships.length}{" "}
@@ -656,7 +656,7 @@ function Focus() {
 
         {/* connections, grouped by type */}
         <section className="mt-7">
-          <div className="flex items-center gap-2.5 mb-[18px]">
+          <div className="flex items-center gap-2.5 mb-4.5">
             <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
               connections
             </span>
@@ -691,7 +691,7 @@ function Focus() {
               const rows = connections.filter((c) => c.typeName === typeName);
               const isOpen = openTypes.includes(typeName);
               return (
-                <div key={typeName} className="mb-[22px] last:mb-0">
+                <div key={typeName} className="mb-5.5 last:mb-0">
                   <div
                     onClick={() =>
                       setOpenTypes(
@@ -705,7 +705,7 @@ function Focus() {
                     }`}
                   >
                     <span
-                      className={`inline-block w-[7px] text-[9px] opacity-50 transition-transform duration-200 ${
+                      className={`inline-block w-1.75 text-[9px] opacity-50 transition-transform duration-200 ${
                         isOpen ? "rotate-90" : ""
                       }`}
                     >
@@ -759,8 +759,8 @@ function Focus() {
 
         {/* gallery */}
         {gallery.length > 0 && (
-          <section className="mt-[30px]">
-            <div className="flex items-center gap-2.5 mb-[18px]">
+          <section className="mt-7.5">
+            <div className="flex items-center gap-2.5 mb-4.5">
               <span className="font-mono text-muted text-[9.5px] uppercase tracking-[0.22em]">
                 gallery
               </span>
@@ -777,12 +777,12 @@ function Focus() {
                     key={i.id}
                     src={url}
                     alt={i.description ?? `${entity?.name}`}
-                    className="w-[58px] h-[58px] object-cover rounded-md border border-line"
+                    className="w-14.5 h-14.5 object-cover rounded-md border border-line"
                   />
                 );
               })}
               {remainingPhoto > 0 && (
-                <div className="w-[58px] h-[58px] rounded-md border border-dashed border-line flex items-center justify-center bg-desk text-muted font-mono text-[11px]">
+                <div className="w-14.5 h-14.5 rounded-md border border-dashed border-line flex items-center justify-center bg-desk text-muted font-mono text-[11px]">
                   +{remainingPhoto}
                 </div>
               )}
