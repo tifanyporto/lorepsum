@@ -138,6 +138,10 @@ Constellation and Focus sit side by side. The page is the height of the screen; 
 
 **The extra width goes to the graph, not to the text.** The Focus has a fixed reading width (`basis-[420px]`, it does not grow); the constellation takes the rest. Running text at 700px is unreadable; a graph at 700px is better.
 
+**Two columns, two jobs, up to the topbar.** The left column is the map and where you are on it: the lockup, then the trail — `lores / The Big Bang Theory`, where `lores` is the way back up. The right column is finding and reading: the search sits over the panel, in its width, because a search ends in a card to read. Each column carries its own, so at no width do the two fight for the same strip.
+
+**No name covers another.** Each name looks for a free spot around what it names — below first, then above, to the sides, on the diagonals, a step further out — in order of importance: the focus, then what is under the pointer, then the neighbours. A neighbour with nowhere free waits for the hover.
+
 **Breathing room instead of full bleed.** The row has a height cap (640px) and automatic margins, so the panels sit centred vertically with air around them. The constellation is an **object on the page**, not a background.
 
 ### The card opens as an index
@@ -274,7 +278,8 @@ Arriving in Marvel, **Batman becomes the blue of the horizon**. The door works b
 
 - **the miniature is the lore's own layout** — the same positions its constellation uses, only smaller. Its size follows the number of entities without writing it.
 - **distance says how much of the lore is yours.** The more of your connections point into a lore, the closer it sits. The purple lines are exactly those connections, reaching into the miniatures. A lore none of them touches sits on the outer edge, placed only by what it shares.
-- **bridges.** An entity that lives in two lores appears between them as a small dot, joined to its place in each. Unnamed at rest — the rule of the border; hovering names it and the lores it joins. The lores are still never linked: the bridge is an entity.
+- **bridges.** An entity that lives in two lores appears between them as a small dot, joined to its place in each, bending around you. Unnamed at rest — the rule of the border; hovering opens the border's own card: its name and, under `IN`, the lores it lives in, each a door that dives into that lore with it in focus. The lores are still never linked: the bridge is an entity.
+- **the lore in focus lights in the focus colour**, its dots and edges both — the way a focused node's edges do. No ring around it.
 - **a click focuses, it does not enter.** As with an entity in the graph, the first click focuses the lore and the reading panel shows it: its types and how many of each, and which lores it touches and through how many entities. Entering is the `enter ↗` in the panel, or a second click.
 - **with nothing focused, the panel shows you** — you are what sits in the centre.
 - **entering is a dive.** One continuous zoom: the miniature grows until it is the constellation and the other lores leave by the edges. The you-node never moves; the lore comes to settle around it. Leaving is the same zoom run backwards.
