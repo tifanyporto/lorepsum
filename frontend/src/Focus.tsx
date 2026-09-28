@@ -16,6 +16,8 @@ import {
   forceManyBody,
   forceLink,
   forceCenter,
+  forceX,
+  forceY,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
   type Force,
@@ -32,6 +34,34 @@ const KEEPOUT_RADIUS = 90;
 // radius so a node on the rim can still be reached, and an edge that has to go
 // around has room to do it without touching the ring of nodes.
 const EDGE_CLEAR_RADIUS = 70;
+// A pull is a gesture on springs. Every node is tied to its home, and every
+// edge rests at the length it has at home, so at home nothing pulls on
+// anything - the graph only moves when a hand moves it, and the motion spreads
+// along the edges. Tuned on the real collection: a pulled node's direct
+// connections follow about a third of the way, the next ring a sixth, the one
+// after a tenth, and a node with no path to it does not move at all.
+const HOME_PULL = 0.3;
+const LINK_PULL = 0.7;
+// letting go is not physics: every node glides straight home, easing out, and
+// lands exactly there - so the place is the same place after every pull
+const RETURN_MS = 700;
+// how far, in screen pixels, a press on a node may travel and still count as
+// a click. Past it, the press becomes a pull.
+const PULL_THRESHOLD = 4;
+
+// the you-node's zone as a rule on positions, not a force: whatever sits
+// inside it is moved out to the rim along its own direction
+function keepClear(n: { x?: number; y?: number }) {
+  const d = Math.hypot(n.x ?? 0, n.y ?? 0);
+  if (d === 0) {
+    n.x = KEEPOUT_RADIUS;
+    n.y = 0;
+  } else if (d < KEEPOUT_RADIUS) {
+    const k = KEEPOUT_RADIUS / d;
+    n.x = (n.x ?? 0) * k;
+    n.y = (n.y ?? 0) * k;
+  }
+}
 
 // keeps that zone clear during the simulation: any node that drifts inside the
 // radius is pushed straight back out along its own direction from the origin,
@@ -130,6 +160,26 @@ function Focus() {
   } | null>(null);
   const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
   const [graphLinks, setGraphLinks] = useState<PositionedLink[]>([]);
+  // what a pull can do to the graph, built with the layout: each node's home,
+  // and the three moments of a pull - taking hold, moving, letting go
+  const liveRef = useRef<{
+    home: Map<number, { x: number; y: number }>;
+    grab: () => void;
+    drag: (node: GraphNode, x: number, y: number) => void;
+    release: (node: GraphNode) => void;
+  } | null>(null);
+  // a press on a node, which is a click until it travels far enough to be a
+  // pull. A ref, not state: it changes on every pointer move.
+  const pressRef = useRef<{
+    node: GraphNode;
+    startX: number;
+    startY: number;
+    pulling: boolean;
+  } | null>(null);
+  // the node being pulled, shown lit and named like a hovered one
+  const [pulledId, setPulledId] = useState<number | null>(null);
+  // the live simulation moves the nodes in place; this only asks for a redraw
+  const [, setFrame] = useState(0);
   const [boxSize, setBoxSize] = useState({ width: 0, height: 0 });
   // which connection types are expanded in the reading panel
   const [openTypes, setOpenTypes] = useState<string[]>([]);
@@ -243,20 +293,97 @@ function Focus() {
     simulation.stop();
     simulation.tick(300);
     // guarantee the clearing: the force leaves it nearly empty, and any
-    // straggler still inside is moved out to the rim along its own direction
-    nodes.forEach((n) => {
-      const d = Math.hypot(n.x ?? 0, n.y ?? 0);
-      if (d === 0) {
-        n.x = KEEPOUT_RADIUS;
-        n.y = 0;
-      } else if (d < KEEPOUT_RADIUS) {
-        const k = KEEPOUT_RADIUS / d;
-        n.x = (n.x ?? 0) * k;
-        n.y = (n.y ?? 0) * k;
-      }
+    // straggler still inside is moved out to the rim
+    nodes.forEach(keepClear);
+
+    // Where the layout put each node is its home. The layout above is still
+    // computed once and never again: a pull is a gesture, not an edit, and
+    // when it ends every node goes back here.
+    const home = new Map(
+      nodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]),
+    );
+    const homeOf = (n: GraphNode) => home.get(n.id) ?? { x: 0, y: 0 };
+    // The simulation a pull runs. Each edge rests at its length at home and
+    // each node is sprung to its home, so at home every force is zero and
+    // nothing drifts; only the hand moves the graph. No charge and no centring:
+    // the layout's forces are what placed the nodes, not what holds them now.
+    const live = forceSimulation(nodes)
+      .force(
+        "link",
+        forceLink<GraphNode, GraphLink>(links)
+          .id((n) => n.id)
+          .distance((l) => {
+            const a = homeOf(l.source as GraphNode);
+            const b = homeOf(l.target as GraphNode);
+            return Math.hypot(a.x - b.x, a.y - b.y);
+          })
+          .strength(LINK_PULL),
+      )
+      .force("home-x", forceX<GraphNode>((n) => homeOf(n).x).strength(HOME_PULL))
+      .force("home-y", forceY<GraphNode>((n) => homeOf(n).y).strength(HOME_PULL))
+      .stop();
+    live.on("tick", () => {
+      // the pulled node is kept out by the hand's own clamp; everyone else
+      // by this one, every frame
+      nodes.forEach((n) => n.fx == null && keepClear(n));
+      setFrame((f) => f + 1);
     });
+
+    let returning = 0;
+    liveRef.current = {
+      home,
+      grab: () => {
+        // taking hold mid-return stops the glide where it is
+        cancelAnimationFrame(returning);
+        nodes.forEach((n) => {
+          n.vx = 0;
+          n.vy = 0;
+        });
+        // held at a steady warmth: the springs keep the same stiffness for
+        // as long as the hand stays
+        live.alpha(0.3).alphaTarget(0.3).restart();
+      },
+      drag: (node, x, y) => {
+        // the hand is stopped by the zone too: dragged into it, the node
+        // slides along its rim
+        const at = { x, y };
+        keepClear(at);
+        node.fx = at.x;
+        node.fy = at.y;
+      },
+      release: (node) => {
+        node.fx = null;
+        node.fy = null;
+        live.stop();
+        const from = new Map(
+          nodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]),
+        );
+        const start = performance.now();
+        const glide = (now: number) => {
+          const t = Math.min(1, (now - start) / RETURN_MS);
+          const eased = 1 - (1 - t) ** 3;
+          nodes.forEach((n) => {
+            const a = from.get(n.id) ?? homeOf(n);
+            const h = homeOf(n);
+            n.x = a.x + (h.x - a.x) * eased;
+            n.y = a.y + (h.y - a.y) * eased;
+            // a straight line home may cut across the zone; it cannot
+            if (t < 1) keepClear(n);
+          });
+          setFrame((f) => f + 1);
+          if (t < 1) returning = requestAnimationFrame(glide);
+        };
+        returning = requestAnimationFrame(glide);
+      },
+    };
+
     setGraphNodes(nodes);
     setGraphLinks(links as unknown as PositionedLink[]);
+    return () => {
+      live.stop();
+      cancelAnimationFrame(returning);
+      liveRef.current = null;
+    };
   }, [entities, allRelationships, user]);
 
   const type = entityTypes.find((t) => t.id === entity?.entity_type_id);
@@ -319,6 +446,41 @@ function Focus() {
     isSelf || entity == null
       ? []
       : selfEdges.filter((r) => r.target_id === entity.id);
+
+  // what a click on a node does: focus it, answer for the arrival, and glide
+  // the camera to it. The camera aims at the node's home, so a click during
+  // a pull's return lands where the node is going, not where it passes.
+  const focusNode = (n: GraphNode) => {
+    const at = liveRef.current?.home.get(n.id) ?? { x: n.x ?? 0, y: n.y ?? 0 };
+    setFocusedId(n.id);
+    setArrivalGloss(
+      connections.find((c) => c.targetId === n.id)?.gloss ?? null,
+    );
+    setPan({ x: -at.x * zoom, y: -at.y * zoom });
+  };
+  // the pointer, in the drawing's own coordinates: the camera's translate and
+  // scale, undone
+  const toGraph = (clientX: number, clientY: number) => {
+    const box = svgRef.current?.getBoundingClientRect();
+    if (box === undefined) return { x: 0, y: 0 };
+    return {
+      x: (clientX - box.left - box.width / 2 - pan.x) / zoom,
+      y: (clientY - box.top - box.height / 2 - pan.y) / zoom,
+    };
+  };
+  // the end of a press on a node. A pull lets go, and the graph glides home.
+  // A press that never became a pull was a click.
+  const endPress = (asClick: boolean) => {
+    const press = pressRef.current;
+    pressRef.current = null;
+    if (press === null) return;
+    if (press.pulling) {
+      setPulledId(null);
+      liveRef.current?.release(press.node);
+    } else if (asClick) {
+      focusNode(press.node);
+    }
+  };
   return (
     <div className="h-screen relative overflow-hidden bg-desk">
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none *:pointer-events-auto">
@@ -357,13 +519,40 @@ function Focus() {
             })
           }
           onPointerMove={(e) => {
+            // a press that started on a node: a click until it travels far
+            // enough, then a pull
+            const press = pressRef.current;
+            if (press !== null) {
+              if (!press.pulling) {
+                const travelled = Math.hypot(
+                  e.clientX - press.startX,
+                  e.clientY - press.startY,
+                );
+                if (travelled < PULL_THRESHOLD) return;
+                press.pulling = true;
+                setPulledId(press.node.id);
+                liveRef.current?.grab();
+              }
+              const p = toGraph(e.clientX, e.clientY);
+              liveRef.current?.drag(press.node, p.x, p.y);
+              return;
+            }
             if (dragStart === null) return;
             setPan({
               x: dragStart.panX + (e.clientX - dragStart.pointerX),
               y: dragStart.panY + (e.clientY - dragStart.pointerY),
             });
           }}
-          onPointerUp={() => setDragStart(null)}
+          onPointerUp={() => {
+            endPress(true);
+            setDragStart(null);
+          }}
+          // an interrupted press is not a click: a pull lets go, a click is
+          // dropped
+          onPointerCancel={() => {
+            endPress(false);
+            setDragStart(null);
+          }}
           onPointerLeave={() => setDragStart(null)}
         >
           <g
@@ -420,7 +609,9 @@ function Focus() {
                   }
                   strokeWidth={touchesHover ? 1.6 : touchesFocus ? 1.3 : 1}
                   key={`${l.source.id}-${l.target.id}`}
-                  className="transition-all duration-300"
+                  // the stroke eases; the path itself never does, or it would
+                  // lag half a second behind the nodes it joins during a pull
+                  className="transition-[stroke,stroke-opacity,stroke-width] duration-300"
                 />
               );
             })}
@@ -450,14 +641,16 @@ function Focus() {
                       stroke="url(#self-edge-fade)"
                       strokeWidth={isFocused ? 1.4 : 1.1}
                       strokeOpacity={isFocused ? 1 : 0.55}
-                      className="transition-all duration-300"
+                      className="transition-[stroke-opacity,stroke-width] duration-300"
                     />
                   );
                 })}
             {graphNodes.map((n) => {
               const isFocused = n.id === focusedId;
               const isNeighbor = neighborIds.has(n.id);
-              const isHovered = n.id === hoveredId;
+              // the node in your hand reads as hovered for the whole pull, even
+              // when the pointer outruns it
+              const isHovered = n.id === hoveredId || n.id === pulledId;
               const showName = isFocused || isNeighbor || isHovered;
               const r = isFocused ? 9 : 6;
               return (
@@ -501,17 +694,21 @@ function Focus() {
                     fillOpacity={
                       isFocused || isHovered ? 1 : isNeighbor ? 0.9 : 0.32
                     }
-                    className="transition-all duration-300 cursor-pointer"
-                    onClick={() => {
-                      setFocusedId(n.id);
-                      setArrivalGloss(
-                        connections.find((c) => c.targetId === n.id)?.gloss ??
-                          null,
-                      );
-                      setPan({
-                        x: -(n.x ?? 0) * zoom,
-                        y: -(n.y ?? 0) * zoom,
-                      });
+                    // colour, opacity and size ease; position never does, or a
+                    // pulled node would trail the pointer like rubber
+                    className="transition-[fill,fill-opacity,r] duration-300 cursor-pointer"
+                    // a press here is not a pan. It stays a click unless it
+                    // travels, and the svg takes the pointer so the pull keeps
+                    // going when the pointer outruns the node
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      svgRef.current?.setPointerCapture(e.pointerId);
+                      pressRef.current = {
+                        node: n,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        pulling: false,
+                      };
                     }}
                   />
                   {showName && (
