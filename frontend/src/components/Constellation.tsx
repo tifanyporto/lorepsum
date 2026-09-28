@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { forceSimulation, forceLink, forceX, forceY } from "d3-force";
 import type { Relationship } from "../types";
 import { EDGE_CLEAR_RADIUS, edgePath, keepClear } from "../graph/geometry";
+import { useBoxSize, visibleCentre } from "../graph/camera";
 import type { GraphLink, GraphNode, Layout } from "../graph/layout";
 import YouNode from "./YouNode";
 
@@ -70,7 +71,9 @@ function Constellation({
   const [pulledId, setPulledId] = useState<number | null>(null);
   // the live simulation moves the nodes in place; this only asks for a redraw
   const [, setFrame] = useState(0);
-  const [boxSize, setBoxSize] = useState({ width: 0, height: 0 });
+  const boxSize = useBoxSize(svgRef);
+  // where the camera aims: the middle of what the panel leaves uncovered
+  const centre = visibleCentre(boxSize.width, boxSize.height);
 
   useEffect(() => {
     // the <svg>
@@ -90,18 +93,6 @@ function Constellation({
     // cleanup: remove this listener before the next one is registered
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoom]);
-
-  useEffect(() => {
-    const el = svgRef.current;
-    if (el === null) return;
-    // fires whenever the element is resized, including the first measurement
-    const observer = new ResizeObserver(() => {
-      const box = el.getBoundingClientRect();
-      setBoxSize({ width: box.width, height: box.height });
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     // fresh objects every time: a pull moves the nodes in place, and the
@@ -241,8 +232,8 @@ function Constellation({
     const box = svgRef.current?.getBoundingClientRect();
     if (box === undefined) return { x: 0, y: 0 };
     return {
-      x: (clientX - box.left - box.width / 2 - pan.x) / zoom,
-      y: (clientY - box.top - box.height / 2 - pan.y) / zoom,
+      x: (clientX - box.left - centre.x - pan.x) / zoom,
+      y: (clientY - box.top - centre.y - pan.y) / zoom,
     };
   };
   // the end of a press on a node. A pull lets go, and the graph glides home.
@@ -310,7 +301,7 @@ function Constellation({
         onPointerLeave={() => setDragStart(null)}
       >
         <g
-          transform={`translate(${boxSize.width / 2 + pan.x}, ${boxSize.height / 2 + pan.y}) scale(${zoom})`}
+          transform={`translate(${centre.x + pan.x}, ${centre.y + pan.y}) scale(${zoom})`}
           className={
             dragStart ? "" : "transition-transform duration-500 ease-out"
           }
