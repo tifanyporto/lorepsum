@@ -12,6 +12,7 @@ from app.schemas import (
     LoreRead,
     LoreUpdate,
     LoreEntityCreate,
+    MembershipRead,
     EntityRead,
 )
 
@@ -48,6 +49,25 @@ def list_lores(user: User = Depends(current_user), db=Depends(get_db)):
     for lore, total in rows:
         lore.entity_count = total
     return [lore for lore, _ in rows]
+
+
+# every membership of every lore, in one read: the join table itself, the way
+# /relationships is the whole list of connections. The sky needs all of it at
+# once - to draw each lore and to find the entities two lores share - and one
+# request per lore would ask the same table the same question N times.
+#
+# Declared before /lores/{lore_id}: routes are matched in order, and that one
+# would take "memberships" for an id and refuse it.
+@router.get("/lores/memberships", response_model=list[MembershipRead])
+def list_memberships(user: User = Depends(current_user), db=Depends(get_db)):
+    return (
+        db.query(EntityLore)
+        .join(Lore, Lore.id == EntityLore.lore_id)
+        .join(Entity, Entity.id == EntityLore.entity_id)
+        .filter(Lore.owner_id == user.id, Lore.archived_at.is_(None), Entity.archived_at.is_(None))
+        .order_by(EntityLore.lore_id, EntityLore.entity_id)
+        .all()
+    )
 
 
 @router.post("/lores", response_model=LoreRead, status_code=201)

@@ -64,6 +64,13 @@ class LoreUpdate(BaseModel):
 class LoreEntityCreate(BaseModel):
     entity_id: int
 
+class MembershipRead(BaseModel):
+    # one row of entity_lores: the statement that this entity is in this lore.
+    # It has no id of its own - the pair is the membership
+    lore_id: int
+    entity_id: int
+    model_config = ConfigDict(from_attributes=True)
+
 class EntityTypeCreate(BaseModel):
     name: str
 
