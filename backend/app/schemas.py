@@ -13,6 +13,8 @@ class UserCreate(BaseModel):
     self_entity_id: int | None = None
     # one of the self entity's own dates - the database refuses anyone else's
     birth_date_id: int | None = None
+    # no nebula_lore_id: the Nebula must be a lore the account owns, and a
+    # brand-new account owns none yet. It is set by an update, once it exists.
 
 
 # the hash is absent on purpose: this is what goes out over the wire
@@ -21,6 +23,7 @@ class UserRead(BaseModel):
     email: str
     self_entity_id: int | None
     birth_date_id: int | None
+    nebula_lore_id: int | None
     email_verified_at: datetime | None
     last_login_at: datetime | None
     created_at: datetime
@@ -33,6 +36,7 @@ class UserUpdate(BaseModel):
     password_hash: str | None = None
     self_entity_id: int | None = None
     birth_date_id: int | None = None
+    nebula_lore_id: int | None = None
 
 class LoreCreate(BaseModel):
     # owner_id is absent on purpose: who owns a lore comes from who is asking,

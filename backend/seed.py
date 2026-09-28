@@ -22,9 +22,9 @@ db = SessionLocal()
 
 if "--reset" in sys.argv:
     # order matters: children before parents, or the foreign keys refuse. The
-    # account lets go of its you-node and its date of birth first - both are
-    # RESTRICT, so while it points at them nothing underneath can be deleted
-    db.query(User).update({User.self_entity_id: None, User.birth_date_id: None})
+    # account lets go of its you-node, its date of birth and its Nebula first -
+    # all RESTRICT, so while it points at them nothing underneath can be deleted
+    db.query(User).update({User.self_entity_id: None, User.birth_date_id: None, User.nebula_lore_id: None})
     db.query(EntityDate).delete()
     db.query(EntityLore).delete()
     db.query(Relationship).delete()
@@ -218,6 +218,10 @@ for nome, desc in LORES:
     lores[nome] = lore
 db.flush()
 
+# the account points at its Nebula: that, not the name, is what makes it the
+# place new entities arrive. Renaming it later changes nothing.
+dev.nebula_lore_id = lores["Nebula"].id
+
 # Every entity belongs to at least one lore, except the one that IS you. The
 # you-node sits outside the slicing for the same reason it sits outside the
 # force simulation: it is the frame, not the content. The screen draws it apart
@@ -290,5 +294,5 @@ print(f"  with a gloss    {db.query(Relationship).filter(Relationship.gloss.isno
 print(f"  dates           {db.query(EntityDate).count()}")
 print(f"  lores           {db.query(Lore).count()}")
 print(f"  memberships     {db.query(EntityLore).count()}")
-print(f"  user            {dev.email!r}, self_entity_id={dev.self_entity_id}, birth_date_id={dev.birth_date_id}")
+print(f"  user            {dev.email!r}, self_entity_id={dev.self_entity_id}, birth_date_id={dev.birth_date_id}, nebula_lore_id={dev.nebula_lore_id}")
 db.close()

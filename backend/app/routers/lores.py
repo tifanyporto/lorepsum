@@ -92,6 +92,12 @@ def delete_lore(lore_id: int, hard: bool = False, user: User = Depends(current_u
     lore = db.get(Lore, lore_id)
     if lore is None or lore.owner_id != user.id:
         raise HTTPException(status_code=404, detail="lore not found")
+    # the Nebula is never deleted: it is the home of every entity that has no
+    # other. The database refuses a hard delete (users.nebula_lore_id is
+    # RESTRICT, and the pointer never moves once set), but archiving is only an
+    # UPDATE and slips past it - so both are refused here, up front.
+    if lore.id == user.nebula_lore_id:
+        raise HTTPException(status_code=409, detail="this lore is your Nebula; it cannot be deleted")
     if hard:
         # the memberships go with it through ON DELETE CASCADE; the entities
         # themselves survive, because a slice is not a container

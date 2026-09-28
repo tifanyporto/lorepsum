@@ -14,7 +14,7 @@ router = APIRouter()
 def refusal(err: IntegrityError, db, self_entity_id: int | None) -> HTTPException:
     """Turn the database's refusal of a user row into an answer that says why.
 
-    Four constraints can say no, and each one means something different to
+    Five constraints can say no, and each one means something different to
     whoever sent the request.
     """
     code = err.orig.pgcode
@@ -29,6 +29,8 @@ def refusal(err: IntegrityError, db, self_entity_id: int | None) -> HTTPExceptio
         return HTTPException(status_code=422, detail="birth_date_id must be one of the self entity's own dates")
     if constraint == "users_birth_date_needs_self":
         return HTTPException(status_code=422, detail="a date of birth needs a self entity first")
+    if constraint == "users_nebula_lore_fkey":
+        return HTTPException(status_code=422, detail="nebula_lore_id must be one of the account's own lores")
     if code == errorcodes.FOREIGN_KEY_VIOLATION:
         return HTTPException(status_code=422, detail="self_entity_id points at no entity")
     raise err
@@ -87,6 +89,15 @@ def update_user(user_id: UUID, payload: UserUpdate, db = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail="user not found")
     changes = payload.model_dump(exclude_unset=True)
+    # the Nebula is set once and then never moves. Pointing elsewhere, or at
+    # nothing, would turn it into an ordinary lore that can be deleted - and
+    # the Nebula is the home of every entity that has no other.
+    if (
+        "nebula_lore_id" in changes
+        and user.nebula_lore_id is not None
+        and changes["nebula_lore_id"] != user.nebula_lore_id
+    ):
+        raise HTTPException(status_code=409, detail="the Nebula is set once; it cannot be replaced or removed")
     for field, value in changes.items():
         setattr(user, field, value)
     try:

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.models import Entity, EntityImage, User
+from app.models import Entity, EntityImage, EntityLore, User
 from app.routers.users import current_user
 from app.schemas import EntityRead, EntityCreate, EntityUpdate
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +29,13 @@ def create_entity(payload: EntityCreate, user: User = Depends(current_user), db=
     )
     db.add(new_entity)
     try:
+        # flushed first, so the entity has an id to be filed under
+        db.flush()
+        # every entity belongs to at least one lore, and a new one arrives in the
+        # Nebula - the lore that holds what belongs to no particular slice yet.
+        # Same transaction: the entity never exists outside it, not even briefly.
+        if user.nebula_lore_id is not None:
+            db.add(EntityLore(entity_id=new_entity.id, lore_id=user.nebula_lore_id))
         db.commit()
     except IntegrityError as err:
         db.rollback()

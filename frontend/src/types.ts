@@ -12,6 +12,7 @@ type User = {
   id: string;
   self_entity_id: number | null;
   birth_date_id: number | null;
+  nebula_lore_id: number | null;
 };
 
 type EntityType = {

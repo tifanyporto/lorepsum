@@ -12,6 +12,9 @@ class User(Base):
     birth among its dates. The account points at the ones registration needs.
     That is what makes the you-node special - nothing in its own row, only the
     account pointing at it.
+
+    The Nebula works the same way: a lore like any other, special only because
+    the account points at it as the place new entities arrive.
     """
 
     __tablename__ = "users"
@@ -30,6 +33,15 @@ class User(Base):
             "birth_date_id IS NULL OR self_entity_id IS NOT NULL",
             name="users_birth_date_needs_self",
         ),
+        # the Nebula must be one of your own lores: the pair has to match one
+        # lore's (id, owner_id). The account's id is never NULL, so this one is
+        # always checked.
+        ForeignKeyConstraint(
+            ["nebula_lore_id", "id"],
+            ["lores.id", "lores.owner_id"],
+            ondelete="RESTRICT",
+            name="users_nebula_lore_fkey",
+        ),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
@@ -42,6 +54,11 @@ class User(Base):
     # card is editing the registration. Nullable because the account is born
     # before its entity, which needs an owner to exist.
     birth_date_id = Column(Integer)
+    # where entities with no other home arrive. RESTRICT, and set once: the
+    # route refuses to move it afterwards, so the Nebula can never be deleted.
+    # Renaming it changes nothing here. Nullable for the same reason as above:
+    # the lore needs an owner first.
+    nebula_lore_id = Column(Integer)
     email_verified_at = Column(DateTime(timezone=True))
     last_login_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -54,6 +71,9 @@ class Lore(Base):
         # two people may both have a lore called "DC Comics"; the same person
         # may not have two
         UniqueConstraint("owner_id", "name"),
+        # the target of the account's Nebula: the pair is what lets the account
+        # demand that its Nebula is a lore it owns
+        UniqueConstraint("id", "owner_id", name="lores_id_owner_id_key"),
     )
 
     id = Column(Integer, primary_key=True)
