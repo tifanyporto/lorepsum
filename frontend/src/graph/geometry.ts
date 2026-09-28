@@ -52,27 +52,27 @@ export function forceKeepOut<N extends SimulationNodeDatum>(
   return force;
 }
 
-// the path of an edge between two crowd nodes. Straight when it stays clear of
-// the you-node's zone. Otherwise it bends around it, the way light bends around
-// a mass: one smooth curve that bows out on the side the straight line already
-// leans to and only grazes the zone at a single point. Each bent edge gets its
-// own curve from its own ends — they never pile onto one shared circle.
-export function edgePath(
+// Where an edge between two crowd nodes bends. Straight - null - when it
+// stays clear of the you-node's zone. Otherwise it bends around it, the way
+// light bends around a mass: one smooth curve that bows out on the side the
+// straight line already leans to and only grazes the zone at a single point.
+// Each bent edge gets its own curve from its own ends — they never pile onto
+// one shared circle. The answer is the control point of that curve.
+export function bendAround(
   a: { x: number; y: number },
   b: { x: number; y: number },
   r: number,
-): string {
-  const straight = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+): { x: number; y: number } | null {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return straight;
+  if (len2 === 0) return null;
   // the point of the straight line nearest the you-node
   const u = Math.max(0, Math.min(1, -(a.x * dx + a.y * dy) / len2));
   const px = a.x + u * dx;
   const py = a.y + u * dy;
   const d = Math.hypot(px, py);
-  if (d >= r) return straight;
+  if (d >= r) return null;
 
   // the side to bow out on: through that nearest point, or — for a line that
   // runs through the you-node dead centre — square to the line
@@ -99,5 +99,18 @@ export function edgePath(
     }
     if (clear) break;
   }
-  return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+  return { x: cx, y: cy };
+}
+
+// the path of an edge between two crowd nodes: straight, or bent around the
+// you-node's zone
+export function edgePath(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  r: number,
+): string {
+  const c = bendAround(a, b, r);
+  return c === null
+    ? `M ${a.x} ${a.y} L ${b.x} ${b.y}`
+    : `M ${a.x} ${a.y} Q ${c.x} ${c.y} ${b.x} ${b.y}`;
 }

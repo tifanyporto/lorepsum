@@ -30,6 +30,11 @@ const MINI_NODE = 1.9;
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+// ink, carrying `amount` of the focus colour
+const tint = (amount: number) =>
+  amount <= 0
+    ? "var(--color-ink)"
+    : `color-mix(in srgb, var(--color-here) ${Math.round(amount * 100)}%, var(--color-ink))`;
 
 // The sky of lores: you in the centre, and every lore around you as its own
 // constellation in miniature.
@@ -192,6 +197,8 @@ function Sky({
       .map((r) => r.target_id),
   );
   const youFocused = focusedLoreId === null;
+  // names shrink a little with a sky zoomed out to fit, never below legible
+  const nameSize = Math.max(12, Math.min(15, 15 * skyCamera.k));
 
   const hovered = sky.bridges.find((b) => b.entityId === hoveredBridge);
   const loreName = (id: number) =>
@@ -246,23 +253,24 @@ function Sky({
           </radialGradient>
         </defs>
 
-        {/* bridges: a line from each shared entity to its place in every
-            lore that holds it. Under everything else. */}
-        <g opacity={away}>
+        {/* bridges: an arm from each shared entity to its place in every
+            lore that holds it, bending around you. Under everything else. */}
+        <g opacity={away} fill="none">
           {sky.bridges.map((b) => {
             const at = toScreen(b.x, b.y);
             const lit = b.entityId === hoveredBridge;
-            return (copies.get(b.entityId) ?? []).map((c) => (
-              <line
-                key={`${b.entityId}-${c.loreId}`}
-                x1={at.x}
-                y1={at.y}
-                x2={c.x}
-                y2={c.y}
-                stroke={lit ? "var(--color-here)" : "var(--color-ink)"}
-                strokeOpacity={lit ? 0.6 : 0.1}
-              />
-            ));
+            return b.arms.map((arm) => {
+              const c = toScreen(arm.cx, arm.cy);
+              const to = toScreen(arm.x, arm.y);
+              return (
+                <path
+                  key={`${b.entityId}-${arm.loreId}`}
+                  d={`M ${at.x} ${at.y} Q ${c.x} ${c.y} ${to.x} ${to.y}`}
+                  stroke={lit ? "var(--color-here)" : "var(--color-ink)"}
+                  strokeOpacity={lit ? 0.6 : 0.1}
+                />
+              );
+            });
           })}
         </g>
 
@@ -272,8 +280,11 @@ function Sky({
           if (d < 32 * youScale) return null;
           const start = (31 * youScale) / d;
           const entering = e.loreId === passage?.loreId;
-          const restOpacity = youFocused ? 1 : 0.55;
-          const restWidth = youFocused ? 1.4 : 1.1;
+          // calm at rest; the lines into a lore light up when that lore is
+          // hovered or in focus - how much of it is yours, shown on demand
+          const lit = e.loreId === focusedLoreId || e.loreId === hoveredLoreId;
+          const restOpacity = lit ? 0.9 : 0.3;
+          const restWidth = lit ? 1.3 : 1;
           return (
             <line
               key={`me-${e.id}-${e.loreId}`}
@@ -304,11 +315,17 @@ function Sky({
           const count = s.layout.nodes.length;
           // the lore being entered turns into its constellation; the rest
           // simply goes
+          // a lore in focus carries a little more weight as well as colour
+          const restRadius = focused ? MINI_NODE * 1.4 : MINI_NODE;
           const nodeRadius = entering
-            ? lerp(MINI_NODE, 6 * insideZoom, inside)
-            : MINI_NODE;
+            ? lerp(restRadius, 6 * insideZoom, inside)
+            : restRadius;
           const edgeWidth = entering ? lerp(1, insideZoom, inside) : 1;
           const edgeOpacity = lerp(lit ? 0.35 : 0.14, 0.08, entering ? inside : 0);
+          // the lore in focus lights in the focus colour, the way a focused
+          // node's edges do. It fades back to ink as a dive enters it, so the
+          // constellation it becomes is the one drawn inside.
+          const ink = tint(focused ? 1 - inside : 0);
           // the name sits above or below, on the side away from you: bridges
           // run between lores, so what lies outward is free. Never to the
           // side, where a long name would run under the panel.
@@ -337,21 +354,11 @@ function Sky({
               }}
             >
               <circle cx={o.x} cy={o.y} r={radius + 12} fill="transparent" />
-              {focused && (
-                <circle
-                  cx={o.x}
-                  cy={o.y}
-                  r={radius + 10}
-                  fill="none"
-                  stroke="var(--color-here)"
-                  strokeOpacity={0.55 * (1 - inside)}
-                />
-              )}
               {count === 0 && (
                 <circle
                   cx={o.x}
                   cy={o.y}
-                  r={radius * 0.6}
+                  r={radius}
                   fill="none"
                   stroke="var(--color-ink)"
                   strokeOpacity={0.2}
@@ -372,7 +379,7 @@ function Sky({
                         EDGE_CLEAR_RADIUS * sigma,
                       )}
                       fill="none"
-                      stroke="var(--color-ink)"
+                      style={{ stroke: ink }}
                       strokeOpacity={edgeOpacity}
                       strokeWidth={edgeWidth}
                     />
@@ -387,11 +394,12 @@ function Sky({
                       cx={n.x * sigma}
                       cy={n.y * sigma}
                       r={nodeRadius}
-                      fill={
-                        hovered?.entityId === n.id
-                          ? "var(--color-here)"
-                          : "var(--color-ink)"
-                      }
+                      style={{
+                        fill:
+                          hovered?.entityId === n.id
+                            ? "var(--color-here)"
+                            : ink,
+                      }}
                       fillOpacity={
                         entering
                           ? lerp(restOpacity, insideOpacity, inside)
@@ -407,7 +415,7 @@ function Sky({
                   y={label.y}
                   textAnchor={label.anchor}
                   className="font-serif"
-                  fontSize={15}
+                  fontSize={nameSize}
                   fill="var(--color-ink)"
                   fillOpacity={lit ? 1 : 0.8}
                 >
@@ -419,7 +427,7 @@ function Sky({
                     y={label.y + 16}
                     textAnchor={label.anchor}
                     className="font-mono"
-                    fontSize={11}
+                    fontSize={Math.max(10, nameSize - 4)}
                     fill="var(--color-muted)"
                   >
                     {count} {count === 1 ? "entity" : "entities"}

@@ -1,15 +1,12 @@
 import {
   forceSimulation,
   forceCollide,
-  forceLink,
-  forceManyBody,
   forceRadial,
   type SimulationNodeDatum,
-  type SimulationLinkDatum,
 } from "d3-force";
 import type { Lore, Membership, Relationship } from "../types";
 import type { Layout } from "./layout";
-import { KEEPOUT_RADIUS } from "./geometry";
+import { KEEPOUT_RADIUS, bendAround } from "./geometry";
 
 // a lore in the sky: where its miniature sits, how big it is drawn, and how
 // its own constellation is scaled down to fit
@@ -27,29 +24,35 @@ export type SkyLore = {
   yours: number;
 };
 
-// an entity that lives in more than one lore, drawn between them
+// an entity that lives in more than one lore, drawn between them: a dot, and
+// an arm from the dot to its place in each lore. The arms bend around you.
 export type Bridge = {
   entityId: number;
   name: string;
   loreIds: number[];
   x: number;
   y: number;
+  // each arm is a quadratic from the dot, through its control point, to the
+  // entity's place in that lore
+  arms: { loreId: number; cx: number; cy: number; x: number; y: number }[];
 };
 
 export type Sky = { lores: SkyLore[]; bridges: Bridge[] };
 
 // the clear zone around you: no lore comes closer than this
-const SKY_CLEAR = 80;
-// room below each miniature for its name
-const LABEL_ROOM = 34;
+const SKY_CLEAR = 56;
+// room around each miniature for its name
+const LABEL_ROOM = 36;
 // how much farther the lore that is least yours sits than the one most yours
-const SPREAD = 200;
+const SPREAD = 100;
+// how wide a berth a bridge gives you on its way between two lores
+const BRIDGE_CLEAR = SKY_CLEAR + 20;
 
 // The sky: every lore around you. Where a lore sits says how much of it is
 // yours - the more of your connections point into it, the closer it comes -
-// and lores that share entities are drawn towards each other. Two lores are
-// never linked: what pulls them together is the entities they share, and each
-// of those is drawn between them as a bridge.
+// and lores that share entities sit side by side. Two lores are never linked:
+// what brings them together is the entities they share, and each of those is
+// drawn between them as a bridge.
 export function layoutSky(
   lores: Lore[],
   layouts: Map<number, Layout>,
@@ -67,13 +70,12 @@ export function layoutSky(
     .filter((r) => r.source_id === selfId)
     .map((r) => r.target_id);
 
-  type Body = SimulationNodeDatum & { id: number; r: number; d: number };
   const placed = lores.map((lore) => {
     const ids = members.get(lore.id) ?? new Set<number>();
     const layout = layouts.get(lore.id) ?? { nodes: [], links: [] };
     // the size of a lore is drawn, not written: the miniature grows with the
     // square root of its entities, so area follows the count
-    const radius = 24 + 13 * Math.sqrt(ids.size);
+    const radius = 24 + 12 * Math.sqrt(ids.size);
     // the miniature is framed on the body of the lore, not on its farthest
     // node: one entity flung to the edge would shrink everything else to a
     // speck. A straggler may reach past the rim; the body fills it.
@@ -82,7 +84,7 @@ export function layoutSky(
       .sort((a, b) => a - b);
     const extent = Math.max(
       KEEPOUT_RADIUS + 6,
-      distances[Math.floor((distances.length - 1) * 0.85)] ?? 0,
+      distances[Math.floor((distances.length - 1) * 0.9)] ?? 0,
     );
     return {
       lore,
@@ -95,23 +97,7 @@ export function layoutSky(
   });
   const mostYours = Math.max(0, ...placed.map((p) => p.yours));
 
-  const bodies: Body[] = placed.map((p, i) => {
-    // a lore none of your connections reaches sits on the outer edge
-    const share = mostYours > 0 ? p.yours / mostYours : 0;
-    const d =
-      SKY_CLEAR + p.radius + 30 + (1 - share) * SPREAD + (p.yours ? 0 : 60);
-    // a fixed start, so the same collection always draws the same sky
-    const angle = -Math.PI / 2 + i * 2.39996;
-    return {
-      id: p.lore.id,
-      r: p.radius,
-      d,
-      x: Math.cos(angle) * d,
-      y: Math.sin(angle) * d,
-    };
-  });
-
-  // the entities each pair of lores shares
+  // the lores each entity lives in, and how many entities each pair shares
   const inLores = new Map<number, number[]>();
   for (const p of placed)
     for (const id of p.ids) inLores.set(id, [...(inLores.get(id) ?? []), p.lore.id]);
@@ -119,37 +105,71 @@ export function layoutSky(
   for (const loreIds of inLores.values()) {
     for (let a = 0; a < loreIds.length; a++)
       for (let b = a + 1; b < loreIds.length; b++) {
-        const key = `${loreIds[a]}-${loreIds[b]}`;
+        const key = [loreIds[a], loreIds[b]].sort((x, y) => x - y).join("-");
         shared.set(key, (shared.get(key) ?? 0) + 1);
       }
   }
-  const byId = new Map(bodies.map((b) => [b.id, b]));
-  type Tie = SimulationLinkDatum<Body> & { count: number };
-  const ties: Tie[] = [...shared.entries()].map(([key, count]) => {
-    const [a, b] = key.split("-").map(Number);
-    return { source: a, target: b, count };
-  });
+  const sharing = (a: number, b: number) =>
+    shared.get([a, b].sort((x, y) => x - y).join("-")) ?? 0;
 
+  // Going round the circle: first the lore most yours, then each time the
+  // lore that shares most with the one before - so lores that touch sit side
+  // by side and the bridges between them stay short.
+  const left = [...placed].sort(
+    (a, b) => b.yours - a.yours || a.lore.id - b.lore.id,
+  );
+  const order: typeof placed = [];
+  while (left.length > 0) {
+    const last = order.at(-1);
+    let pick = 0;
+    if (last !== undefined)
+      left.forEach((p, i) => {
+        if (sharing(last.lore.id, p.lore.id) > sharing(last.lore.id, left[pick].lore.id))
+          pick = i;
+      });
+    order.push(...left.splice(pick, 1));
+  }
+
+  type Body = SimulationNodeDatum & { id: number; r: number; d: number };
+  const bodies: Body[] = order.map((p) => {
+    // a lore none of your connections reaches sits on the outer edge
+    const share = mostYours > 0 ? p.yours / mostYours : 0;
+    return {
+      id: p.lore.id,
+      r: p.radius,
+      d:
+        SKY_CLEAR + p.radius + LABEL_ROOM + (1 - share) * SPREAD +
+        (p.yours ? 0 : 40),
+    };
+  });
+  // Each lore gets the slice of the circle it needs at its distance, and what
+  // is left is shared out evenly between them, so the lores go all the way
+  // round instead of crowding one side. Too many to fit, and the whole ring
+  // moves out until they do.
+  const room = (b: Body, grow: number) =>
+    2 * Math.asin(Math.min(1, (b.r + LABEL_ROOM) / (b.d * grow)));
+  let grow = 1;
+  while (bodies.reduce((sum, b) => sum + room(b, grow), 0) > Math.PI * 1.9)
+    grow *= 1.08;
+  const gap =
+    (2 * Math.PI - bodies.reduce((sum, b) => sum + room(b, grow), 0)) /
+    Math.max(1, bodies.length);
+  let angle = -Math.PI / 2;
+  for (const b of bodies) {
+    b.d *= grow;
+    const middle = angle + room(b, 1) / 2;
+    b.x = Math.cos(middle) * b.d;
+    b.y = Math.sin(middle) * b.d;
+    angle += room(b, 1) + gap;
+  }
+  // neighbours at different distances can still graze: a short settling
+  // pass keeps each one on its ring and out of the others' way
   const simulation = forceSimulation(bodies)
-    .force(
-      "distance",
-      forceRadial<Body>((b) => b.d, 0, 0).strength(0.8),
-    )
-    .force(
-      "room",
-      forceCollide<Body>((b) => b.r + LABEL_ROOM),
-    )
-    .force("spread", forceManyBody<Body>().strength(-150).distanceMax(600))
-    .force(
-      "shared",
-      forceLink<Body, Tie>(ties)
-        .id((b) => b.id)
-        // once the force starts, each end is the body itself
-        .distance((t) => (t.source as Body).r + (t.target as Body).r + 60)
-        .strength((t) => 0.3 * Math.min(1, t.count / 3)),
-    );
-  simulation.stop();
-  simulation.tick(300);
+    .force("distance", forceRadial<Body>((b) => b.d, 0, 0).strength(0.5))
+    .force("room", forceCollide<Body>((b) => b.r + LABEL_ROOM).iterations(3))
+    .stop();
+  simulation.tick(120);
+  const byId = new Map(bodies.map((b) => [b.id, b]));
 
   const skyLores: SkyLore[] = placed.map((p) => {
     const body = byId.get(p.lore.id);
@@ -164,43 +184,70 @@ export function layoutSky(
     };
   });
 
-  // Each bridge sits in the gap between the lores it joins; several bridges
-  // between the same lores line up across that gap instead of piling up.
-  const centreOf = new Map(skyLores.map((s) => [s.lore.id, s]));
-  const groups = new Map<string, number[]>();
-  for (const [entityId, loreIds] of inLores) {
-    if (loreIds.length < 2) continue;
-    const key = loreIds.join("-");
-    groups.set(key, [...(groups.get(key) ?? []), entityId]);
-  }
+  // A bridge is drawn from the entity's place in one lore to its place in
+  // the other, bending around you when the straight line would cross you; the
+  // dot sits halfway along. An entity in three lores or more has its dot
+  // between all its places, pushed out of your zone, and an arm to each.
+  const placeOf = (loreId: number, entityId: number) => {
+    const s = skyLores.find((l) => l.lore.id === loreId);
+    const n = s?.layout.nodes.find((m) => m.id === entityId);
+    if (s === undefined || n === undefined) return null;
+    return { x: s.x + n.x * s.scale, y: s.y + n.y * s.scale };
+  };
   const names = new Map(
     placed.flatMap((p) => p.layout.nodes.map((n) => [n.id, n.name] as const)),
   );
   const bridges: Bridge[] = [];
-  for (const [key, entityIds] of groups) {
-    const loreIds = key.split("-").map(Number);
-    const ends = loreIds.map((id) => centreOf.get(id)).filter((s) => s != null);
-    let bx = ends.reduce((sum, s) => sum + s.x, 0) / ends.length;
-    let by = ends.reduce((sum, s) => sum + s.y, 0) / ends.length;
-    let across = { x: 1, y: 0 };
-    if (ends.length === 2) {
-      const [a, b] = ends;
-      const gap = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      const u = { x: (b.x - a.x) / gap, y: (b.y - a.y) / gap };
-      const mid = a.radius + (gap - a.radius - b.radius) / 2;
-      bx = a.x + u.x * mid;
-      by = a.y + u.y * mid;
-      across = { x: -u.y, y: u.x };
-    }
-    entityIds.forEach((entityId, i) => {
-      const offset = (i - (entityIds.length - 1) / 2) * 14;
-      bridges.push({
-        entityId,
-        name: names.get(entityId) ?? "",
-        loreIds,
-        x: bx + across.x * offset,
-        y: by + across.y * offset,
+  for (const [entityId, loreIds] of inLores) {
+    if (loreIds.length < 2) continue;
+    const places = loreIds
+      .map((loreId) => ({ loreId, at: placeOf(loreId, entityId) }))
+      .filter((p) => p.at !== null) as {
+      loreId: number;
+      at: { x: number; y: number };
+    }[];
+    if (places.length < 2) continue;
+    let dot: { x: number; y: number };
+    let arms: Bridge["arms"];
+    if (places.length === 2) {
+      const [a, b] = places;
+      // one curve from place to place, split at its middle into two arms
+      const c = bendAround(a.at, b.at, BRIDGE_CLEAR) ?? {
+        x: (a.at.x + b.at.x) / 2,
+        y: (a.at.y + b.at.y) / 2,
+      };
+      dot = {
+        x: 0.25 * a.at.x + 0.5 * c.x + 0.25 * b.at.x,
+        y: 0.25 * a.at.y + 0.5 * c.y + 0.25 * b.at.y,
+      };
+      arms = [
+        { loreId: a.loreId, cx: (a.at.x + c.x) / 2, cy: (a.at.y + c.y) / 2, ...a.at },
+        { loreId: b.loreId, cx: (b.at.x + c.x) / 2, cy: (b.at.y + c.y) / 2, ...b.at },
+      ];
+    } else {
+      dot = {
+        x: places.reduce((sum, p) => sum + p.at.x, 0) / places.length,
+        y: places.reduce((sum, p) => sum + p.at.y, 0) / places.length,
+      };
+      const out = Math.hypot(dot.x, dot.y);
+      if (out < BRIDGE_CLEAR) {
+        const [dx, dy] = out > 1e-6 ? [dot.x / out, dot.y / out] : [0, -1];
+        dot = { x: dx * BRIDGE_CLEAR, y: dy * BRIDGE_CLEAR };
+      }
+      arms = places.map((p) => {
+        const c = bendAround(dot, p.at, BRIDGE_CLEAR) ?? {
+          x: (dot.x + p.at.x) / 2,
+          y: (dot.y + p.at.y) / 2,
+        };
+        return { loreId: p.loreId, cx: c.x, cy: c.y, ...p.at };
       });
+    }
+    bridges.push({
+      entityId,
+      name: names.get(entityId) ?? "",
+      loreIds,
+      ...dot,
+      arms,
     });
   }
 
