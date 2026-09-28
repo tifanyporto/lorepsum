@@ -18,11 +18,96 @@ import {
   forceCenter,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
+  type Force,
 } from "d3-force";
 
 type GraphNode = SimulationNodeDatum & { id: number; name: string };
 type GraphLink = SimulationLinkDatum<GraphNode>;
 type PositionedLink = { source: GraphNode; target: GraphNode };
+
+// radius of the clear zone reserved around the you-node at the origin. The
+// crowd forms a ring outside it; nothing else is drawn inside it.
+const KEEPOUT_RADIUS = 90;
+// radius no edge between two other nodes may enter. Smaller than the node
+// radius so a node on the rim can still be reached, and an edge that has to go
+// around has room to do it without touching the ring of nodes.
+const EDGE_CLEAR_RADIUS = 70;
+
+// keeps that zone clear during the simulation: any node that drifts inside the
+// radius is pushed straight back out along its own direction from the origin,
+// so the crowd settles as a ring around the you-node instead of on top of it.
+function forceKeepOut(
+  radius: number,
+  strength = 1,
+): Force<GraphNode, GraphLink> {
+  let nodes: GraphNode[] = [];
+  const force: Force<GraphNode, GraphLink> = (alpha: number) => {
+    for (const n of nodes) {
+      const x = n.x ?? 0;
+      const y = n.y ?? 0;
+      const d = Math.hypot(x, y);
+      if (d > 0 && d < radius) {
+        const k = ((radius - d) / d) * strength * alpha;
+        n.vx = (n.vx ?? 0) + x * k;
+        n.vy = (n.vy ?? 0) + y * k;
+      }
+    }
+  };
+  force.initialize = (n: GraphNode[]) => {
+    nodes = n;
+  };
+  return force;
+}
+
+// the path of an edge between two crowd nodes. Straight when it stays clear of
+// the you-node's zone. Otherwise it bends around it, the way light bends around
+// a mass: one smooth curve that bows out on the side the straight line already
+// leans to and only grazes the zone at a single point. Each bent edge gets its
+// own curve from its own ends — they never pile onto one shared circle.
+function edgePath(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  r: number,
+): string {
+  const straight = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return straight;
+  // the point of the straight line nearest the you-node
+  const u = Math.max(0, Math.min(1, -(a.x * dx + a.y * dy) / len2));
+  const px = a.x + u * dx;
+  const py = a.y + u * dy;
+  const d = Math.hypot(px, py);
+  if (d >= r) return straight;
+
+  // the side to bow out on: through that nearest point, or — for a line that
+  // runs through the you-node dead centre — square to the line
+  const len = Math.sqrt(len2);
+  const [nx, ny] = d > 1e-6 ? [px / d, py / d] : [-dy / len, dx / len];
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  // a quadratic whose middle sits `reach` out along that side. Widen the reach
+  // until no sampled point of the curve dips inside the zone.
+  let cx = 0;
+  let cy = 0;
+  for (let reach = r + 4; reach < r * 4; reach += 4) {
+    cx = 2 * reach * nx - mx;
+    cy = 2 * reach * ny - my;
+    let clear = true;
+    for (let i = 1; i < 48; i++) {
+      const t = i / 48;
+      const x = (1 - t) * (1 - t) * a.x + 2 * t * (1 - t) * cx + t * t * b.x;
+      const y = (1 - t) * (1 - t) * a.y + 2 * t * (1 - t) * cy + t * t * b.y;
+      if (Math.hypot(x, y) < r) {
+        clear = false;
+        break;
+      }
+    }
+    if (clear) break;
+  }
+  return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+}
 
 function Focus() {
   const [user, setUser] = useState<User>();
@@ -150,9 +235,26 @@ function Focus() {
           .id((n) => n.id)
           .distance(90),
       )
-      .force("center", forceCenter(0, 0));
+      // the you-node is pinned at the origin, the centre of the drawing, and
+      // the crowd is centred there too — but the keep-out force hollows a clear
+      // zone around it, so the rest settles as a ring and never on top of it
+      .force("center", forceCenter(0, 0))
+      .force("keepout", forceKeepOut(KEEPOUT_RADIUS));
     simulation.stop();
     simulation.tick(300);
+    // guarantee the clearing: the force leaves it nearly empty, and any
+    // straggler still inside is moved out to the rim along its own direction
+    nodes.forEach((n) => {
+      const d = Math.hypot(n.x ?? 0, n.y ?? 0);
+      if (d === 0) {
+        n.x = KEEPOUT_RADIUS;
+        n.y = 0;
+      } else if (d < KEEPOUT_RADIUS) {
+        const k = KEEPOUT_RADIUS / d;
+        n.x = (n.x ?? 0) * k;
+        n.y = (n.y ?? 0) * k;
+      }
+    });
     setGraphNodes(nodes);
     setGraphLinks(links as unknown as PositionedLink[]);
   }, [entities, allRelationships, user]);
@@ -184,6 +286,22 @@ function Focus() {
     if (l.source.id === focusedId) neighborIds.add(l.target.id);
     if (l.target.id === focusedId) neighborIds.add(l.source.id);
   });
+  // the you-node's own edges, and how far the farthest one reaches. The fade
+  // gradient below is centred on the origin (the you-node) and runs to this
+  // radius, so a long edge dissolves before it crosses the whole drawing while
+  // a short one stays solid — the connection reads near the node, not as a
+  // streak across the sky.
+  const selfEdges =
+    user?.self_entity_id != null
+      ? allRelationships.filter((r) => r.source_id === user.self_entity_id)
+      : [];
+  const selfEdgeReach = Math.max(
+    1,
+    ...selfEdges.map((r) => {
+      const t = graphNodes.find((n) => n.id === r.target_id);
+      return t?.x != null && t.y != null ? Math.hypot(t.x, t.y) : 0;
+    }),
+  );
   return (
     <div className="h-screen relative overflow-hidden bg-desk">
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none [&>*]:pointer-events-auto">
@@ -237,22 +355,51 @@ function Focus() {
               dragStart ? "" : "transition-transform duration-500 ease-out"
             }
           >
+            {/* the you-node edges' fade. userSpaceOnUse ties (cx, cy, r) to this
+                group's coordinate system, where the pinned you-node is (0, 0):
+                full accent at the core, gone by the farthest edge's tip. */}
+            <defs>
+              <radialGradient
+                id="self-edge-fade"
+                gradientUnits="userSpaceOnUse"
+                cx={0}
+                cy={0}
+                r={selfEdgeReach}
+              >
+                <stop
+                  offset="0"
+                  stopColor="var(--color-accent)"
+                  stopOpacity={0.85}
+                />
+                <stop
+                  offset="1"
+                  stopColor="var(--color-accent)"
+                  stopOpacity={0}
+                />
+              </radialGradient>
+            </defs>
+            {/* everyone else's edges. None of them enters the you-node's zone:
+                edgePath bends any that would cross it around it instead. Only
+                the you-node's own edges (drawn below) cross that space, because
+                they are the ones that belong there. */}
             {graphLinks.map((l) => {
               const touchesFocus =
                 l.source.id === focusedId || l.target.id === focusedId;
               const touchesHover =
                 l.source.id === hoveredId || l.target.id === hoveredId;
               return (
-                <line
-                  x1={l.source.x}
-                  y1={l.source.y}
-                  x2={l.target.x}
-                  y2={l.target.y}
+                <path
+                  d={edgePath(
+                    { x: l.source.x ?? 0, y: l.source.y ?? 0 },
+                    { x: l.target.x ?? 0, y: l.target.y ?? 0 },
+                    EDGE_CLEAR_RADIUS,
+                  )}
+                  fill="none"
                   stroke={
                     touchesFocus ? "var(--color-here)" : "var(--color-ink)"
                   }
                   strokeOpacity={
-                    touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.16
+                    touchesHover ? 0.9 : touchesFocus ? 0.55 : 0.08
                   }
                   strokeWidth={touchesHover ? 1.6 : touchesFocus ? 1.3 : 1}
                   key={`${l.source.id}-${l.target.id}`}
@@ -271,9 +418,10 @@ function Focus() {
                 .map((r) => {
                   const target = graphNodes.find((n) => n.id === r.target_id);
                   if (target?.x == null || target.y == null) return null;
-                  // walk 27 along the direction of the target
+                  // walk 31 along the direction of the target, so the line
+                  // leaves from the arc ring rather than from the core
                   const distance = Math.hypot(target.x, target.y);
-                  const start = 27 / distance;
+                  const start = 31 / distance;
                   const isFocused = focusedId === user.self_entity_id;
                   return (
                     <line
@@ -282,9 +430,9 @@ function Focus() {
                       y1={target.y * start}
                       x2={target.x}
                       y2={target.y}
-                      stroke="var(--color-accent)"
+                      stroke="url(#self-edge-fade)"
                       strokeWidth={isFocused ? 1.4 : 1.1}
-                      strokeOpacity={isFocused ? 0.7 : 0.3}
+                      strokeOpacity={isFocused ? 1 : 0.55}
                       className="transition-all duration-300"
                     />
                   );
@@ -334,7 +482,7 @@ function Focus() {
                         : "var(--color-ink)"
                     }
                     fillOpacity={
-                      isFocused || isHovered ? 1 : isNeighbor ? 0.9 : 0.45
+                      isFocused || isHovered ? 1 : isNeighbor ? 0.9 : 0.32
                     }
                     className="transition-all duration-300 cursor-pointer"
                     onClick={() => {
@@ -382,7 +530,7 @@ function Focus() {
               >
                 {focusedId === user.self_entity_id && (
                   <circle
-                    r={12}
+                    r={14}
                     fill="none"
                     stroke="var(--color-accent)"
                     strokeWidth={1.4}
@@ -391,25 +539,27 @@ function Focus() {
                 )}
                 {/* two open arcs instead of a closed ring: the gaps let the
                       real edges pass through, so the shape never strangles a
-                      connection the way a full circle would */}
+                      connection the way a full circle would. Enlarged from r=27
+                      to r=31 with a heavier stroke so the you-node holds its own
+                      mass beside a lit focus — weight, not brightness. */}
                 <g
                   fill="none"
                   stroke="var(--color-accent)"
-                  strokeWidth={1.5}
+                  strokeWidth={1.8}
                   strokeLinecap="round"
-                  strokeOpacity={focusedId === user.self_entity_id ? 0.9 : 0.55}
+                  strokeOpacity={focusedId === user.self_entity_id ? 0.9 : 0.62}
                   className="transition-all duration-300"
                 >
-                  <path d="M -24 -12 A 27 27 0 0 1 24 -12" />
-                  <path d="M 24 12 A 27 27 0 0 1 -24 12" />
+                  <path d="M -28 -14 A 31 31 0 0 1 28 -14" />
+                  <path d="M 28 14 A 31 31 0 0 1 -28 14" />
                 </g>
                 {/* the core is a diamond, never a dot — it must not read as
                       one more node among the others */}
                 <rect
-                  x={-6}
-                  y={-6}
-                  width={12}
-                  height={12}
+                  x={-7}
+                  y={-7}
+                  width={14}
+                  height={14}
                   transform="rotate(45)"
                   fill="var(--color-accent)"
                   fillOpacity={focusedId === user.self_entity_id ? 1 : 0.7}
