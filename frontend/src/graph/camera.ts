@@ -39,3 +39,29 @@ export function useBoxSize(ref: RefObject<Element | null>) {
   }, [ref]);
   return size;
 }
+
+// A camera over the sky: the sky point at the centre of the view, and how
+// many screen pixels one sky unit takes.
+export type SkyCamera = { x: number; y: number; k: number };
+
+// A pure zoom from one camera to another. The one point both cameras frame at
+// the same place on screen stays put, and everything else moves straight
+// towards it or away from it. The scale changes geometrically - by the same
+// factor every moment - which reads as moving through space rather than as a
+// picture being stretched.
+export function zoomBetween(
+  a: SkyCamera,
+  b: SkyCamera,
+  t: number,
+): SkyCamera {
+  const k = a.k * Math.pow(b.k / a.k, t);
+  if (Math.abs(b.k - a.k) < 1e-9)
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, k };
+  const px = (b.x * b.k - a.x * a.k) / (b.k - a.k);
+  const py = (b.y * b.k - a.y * a.k) / (b.k - a.k);
+  return {
+    x: px + ((a.x - px) * a.k) / k,
+    y: py + ((a.y - py) * a.k) / k,
+    k,
+  };
+}

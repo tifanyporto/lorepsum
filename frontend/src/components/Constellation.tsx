@@ -30,6 +30,7 @@ function Constellation({
   allRelationships,
   focusedId,
   onFocus,
+  onCamera,
 }: {
   layout: Layout;
   selfId: number | null | undefined;
@@ -38,6 +39,9 @@ function Constellation({
   // a node was clicked: its id, and the gloss of the connection that led
   // there from the focus, if one did
   onFocus: (id: number, gloss: string | null) => void;
+  // where the camera is, told on every change - a rise to the sky starts
+  // from here
+  onCamera?: (camera: { pan: { x: number; y: number }; zoom: number }) => void;
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -74,6 +78,10 @@ function Constellation({
   const boxSize = useBoxSize(svgRef);
   // where the camera aims: the middle of what the panel leaves uncovered
   const centre = visibleCentre(boxSize.width, boxSize.height);
+
+  useEffect(() => {
+    onCamera?.({ pan, zoom });
+  }, [pan, zoom, onCamera]);
 
   useEffect(() => {
     // the <svg>

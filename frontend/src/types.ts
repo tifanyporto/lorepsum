@@ -35,6 +35,19 @@ type Relationship = {
   gloss: string | null;
 };
 
+type Lore = {
+  id: number;
+  name: string;
+  description: string | null;
+  entity_count: number;
+};
+
+// one row of entity_lores: this entity is in this lore
+type Membership = {
+  lore_id: number;
+  entity_id: number;
+};
+
 type EntityImage = {
   id: number;
   entity_id: number;
@@ -51,4 +64,6 @@ export type {
   Relationship,
   EntityType,
   EntityImage,
+  Lore,
+  Membership,
 };

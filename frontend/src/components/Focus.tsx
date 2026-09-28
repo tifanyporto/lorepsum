@@ -18,6 +18,7 @@ function Focus({
   entityTypes,
   allRelationships,
   onSelect,
+  isOutside,
 }: {
   focusedId: number | null;
   // the gloss of the connection that brought you here, read in place of the
@@ -29,6 +30,9 @@ function Focus({
   allRelationships: Relationship[];
   // a connection was clicked: its target, and the gloss it carries
   onSelect: (id: number, gloss: string | null) => void;
+  // whether an entity lives outside the lore on screen; such a connection is
+  // written in the colour of the horizon
+  isOutside?: (id: number) => boolean;
 }) {
   const [entity, setEntity] = useState<Entity>();
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -243,7 +247,11 @@ function Focus({
                         >
                           {c.label}
                         </span>
-                        <span className="font-serif text-ink text-[15.5px] leading-snug transition-colors group-hover:text-accent">
+                        <span
+                          className={`font-serif text-[15.5px] leading-snug transition-colors group-hover:text-accent ${
+                            isOutside?.(c.targetId) ? "text-beyond" : "text-ink"
+                          }`}
+                        >
                           {c.name}
                         </span>
                       </div>
