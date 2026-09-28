@@ -72,3 +72,23 @@
   background: var(--color-accent);
   border-radius: 999px;
 }
+
+/* the border's slow breathing: 6s against the 2.6s of the focus pulse. Fast
+   says you are here; slow says something breathes far away */
+.breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: breathe 6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(2.2);
+    opacity: 0.35;
+  }
+}

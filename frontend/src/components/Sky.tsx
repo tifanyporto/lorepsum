@@ -10,6 +10,8 @@ import {
 import type { Sky as SkyData } from "../graph/sky";
 import { placeLabels } from "../graph/labels";
 import YouNode from "./YouNode";
+import LoreCard, { type Door } from "./LoreCard";
+import { useCard } from "./useCard";
 
 // the camera the person moves: the sky point at the centre, and a zoom on top
 // of the one that fits the whole sky in view
@@ -48,6 +50,8 @@ function Sky({
   onView,
   onFocusLore,
   onEnter,
+  homesOf,
+  onOpen,
   passage,
   progress,
 }: {
@@ -60,6 +64,10 @@ function Sky({
   onView: (view: SkyView) => void;
   onFocusLore: (id: number | null) => void;
   onEnter: (id: number) => void;
+  // the lores an entity lives in, most yours first
+  homesOf: (id: number) => Door[];
+  // a door on a bridge's card: dive into that lore, with the entity in focus
+  onOpen: (entityId: number, loreId: number) => void;
   passage: Passage | null;
   // how far the passage has gone, from 0 to 1
   progress: number;
@@ -68,7 +76,9 @@ function Sky({
   const box = useBoxSize(svgRef);
   const centre = visibleCentre(box.width, box.height);
   const [hoveredLoreId, setHoveredLoreId] = useState<number | null>(null);
-  const [hoveredBridge, setHoveredBridge] = useState<number | null>(null);
+  // the bridge whose card is open is the one lit
+  const cards = useCard();
+  const hoveredBridge = cards.card?.id ?? null;
   // a press on the sky: a pan once it travels, a click until then. The click
   // handlers read `moved` to tell the two apart.
   const pressRef = useRef<{
@@ -202,19 +212,16 @@ function Sky({
   const nameSize = Math.max(12, Math.min(15, 15 * skyCamera.k));
 
   const hovered = sky.bridges.find((b) => b.entityId === hoveredBridge);
-  const loreName = (id: number) =>
-    sky.lores.find((s) => s.lore.id === id)?.lore.name ?? "";
 
   // Where every name goes, so that none covers another. Each lore's name
   // prefers the side away from you - bridges run between lores, so what lies
   // outward is free - then the other side, then beside the miniature. The
   // lore in focus is placed first, then the one under the pointer, then the
-  // largest. A hovered bridge names itself last, around what is already there.
+  // largest.
   const serif = '"Fraunces", Georgia, serif';
   const mono = '"IBM Plex Mono", monospace';
   const loreRank = (id: number) =>
     id === focusedLoreId ? 0 : id === hoveredLoreId ? 1 : 2;
-  const bridgeAt = hovered ? toScreen(hovered.x, hovered.y) : null;
   const labels = placeLabels(
     [
       ...[...sky.lores]
@@ -263,31 +270,6 @@ function Sky({
             must: true,
           };
         }),
-      ...(hovered && bridgeAt
-        ? [
-            {
-              key: "bridge",
-              x: bridgeAt.x,
-              y: bridgeAt.y,
-              r: 4,
-              lines: [
-                { text: hovered.name, size: 13, family: serif },
-                {
-                  text: hovered.loreIds.map(loreName).join(" · "),
-                  size: 11,
-                  family: mono,
-                },
-              ],
-              spots: [
-                { dx: 0, dy: -26, anchor: "middle" as const },
-                { dx: 0, dy: 20, anchor: "middle" as const },
-                { dx: 10, dy: -4, anchor: "start" as const },
-                { dx: -10, dy: -4, anchor: "end" as const },
-              ],
-              must: true,
-            },
-          ]
-        : []),
     ],
     [
       { x: you.x, y: you.y, r: 36 * youScale },
@@ -306,6 +288,8 @@ function Sky({
           passage ? "pointer-events-none" : "cursor-grab active:cursor-grabbing"
         }`}
         onPointerDown={(e) => {
+          // pressing anywhere else closes a pinned card
+          cards.close();
           pressRef.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -533,8 +517,12 @@ function Sky({
             return (
               <g
                 key={b.entityId}
-                onMouseEnter={() => setHoveredBridge(b.entityId)}
-                onMouseLeave={() => setHoveredBridge(null)}
+                className="cursor-pointer"
+                onMouseEnter={() => cards.hover(b.entityId)}
+                onMouseLeave={cards.leave}
+                // a click pins the card open, as at the border of a lore
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => cards.pin(b.entityId)}
               >
                 <circle cx={at.x} cy={at.y} r={9} fill="transparent" />
                 <circle
@@ -562,38 +550,35 @@ function Sky({
           </g>
         )}
 
-        {/* a hovered bridge names itself and the lores it joins */}
-        {hovered !== undefined && inside === 0 && labels.has("bridge") && (
-          <g className="pointer-events-none">
-            <text
-              x={labels.get("bridge")?.x}
-              y={labels.get("bridge")?.y}
-              textAnchor={labels.get("bridge")?.anchor}
-              className="font-serif"
-              fontSize={13}
-              fill="var(--color-ink)"
-              stroke="var(--color-desk)"
-              strokeWidth={4}
-              paintOrder="stroke"
-            >
-              {hovered.name}
-            </text>
-            <text
-              x={labels.get("bridge")?.x}
-              y={(labels.get("bridge")?.y ?? 0) + 15}
-              textAnchor={labels.get("bridge")?.anchor}
-              className="font-mono"
-              fontSize={11}
-              fill="var(--color-muted)"
-              stroke="var(--color-desk)"
-              strokeWidth={4}
-              paintOrder="stroke"
-            >
-              {hovered.loreIds.map(loreName).join(" · ")}
-            </text>
-          </g>
-        )}
       </svg>
+      {/* a bridge is an entity that lives in several lores: its card lists
+          them, and each one is a door into that lore, with it in focus */}
+      {hovered !== undefined &&
+        inside === 0 &&
+        (() => {
+          const at = toScreen(hovered.x, hovered.y);
+          const uncovered = box.width - 468;
+          let side: "left" | "right" = at.x < youAtRest.x ? "left" : "right";
+          if (side === "right" && at.x + 250 > uncovered) side = "left";
+          if (side === "left" && at.x - 250 < 0) side = "right";
+          return (
+            <LoreCard
+              key={hovered.entityId}
+              title={hovered.name}
+              heading="in"
+              doors={homesOf(hovered.entityId)}
+              x={at.x}
+              y={Math.min(box.height - 90, Math.max(90, at.y))}
+              side={side}
+              onPick={(loreId) => {
+                cards.close();
+                onOpen(hovered.entityId, loreId);
+              }}
+              onEnter={cards.stay}
+              onLeave={cards.leave}
+            />
+          );
+        })()}
     </div>
   );
 }

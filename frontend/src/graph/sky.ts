@@ -5,7 +5,7 @@ import {
   type SimulationNodeDatum,
 } from "d3-force";
 import type { Lore, Membership, Relationship } from "../types";
-import type { Layout } from "./layout";
+import { EMPTY_LAYOUT, type Layout } from "./layout";
 import { KEEPOUT_RADIUS, bendAround } from "./geometry";
 
 // a lore in the sky: where its miniature sits, how big it is drawn, and how
@@ -72,7 +72,7 @@ export function layoutSky(
 
   const placed = lores.map((lore) => {
     const ids = members.get(lore.id) ?? new Set<number>();
-    const layout = layouts.get(lore.id) ?? { nodes: [], links: [] };
+    const layout = layouts.get(lore.id) ?? EMPTY_LAYOUT;
     // the size of a lore is drawn, not written: the miniature grows with the
     // square root of its entities, so area follows the count
     const radius = 24 + 12 * Math.sqrt(ids.size);

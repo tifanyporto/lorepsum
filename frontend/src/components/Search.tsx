@@ -14,7 +14,7 @@ function Search({
     e.name.toLowerCase().includes(query.toLowerCase()),
   );
   return (
-    <div className="relative flex-1 min-w-0 max-w-sm">
+    <div className="relative w-full min-w-0">
       <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
         <SearchIcon />
       </span>

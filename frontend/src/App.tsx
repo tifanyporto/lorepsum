@@ -8,8 +8,9 @@ import type {
   Membership,
 } from "./types";
 import { fetchJson } from "./api";
-import { layoutConstellation, type Layout } from "./graph/layout";
+import { EMPTY_LAYOUT, layoutConstellation, type Layout } from "./graph/layout";
 import { layoutSky } from "./graph/sky";
+import { crossingCamera } from "./graph/camera";
 import ThemeToggle from "./components/ThemeToggle";
 import Logo from "./components/Logo";
 import Wordmark from "./components/Wordmark";
@@ -18,6 +19,8 @@ import Constellation from "./components/Constellation";
 import Focus from "./components/Focus";
 import LorePanel from "./components/LorePanel";
 import Sky, { type Passage, type SkyView } from "./components/Sky";
+import Crossing from "./components/Crossing";
+import type { Door } from "./components/LoreCard";
 
 // where you are: the sky of lores, or inside one of them
 type Place = { kind: "sky" } | { kind: "lore"; loreId: number };
@@ -25,7 +28,17 @@ type Place = { kind: "sky" } | { kind: "lore"; loreId: number };
 // a dive or a rise, and what to focus when a dive lands
 type Journey = Passage & { focusAfter: number | null; glossAfter: string | null };
 
+// a crossing from one lore into another, anchored on the entity it goes
+// through, from where the camera stood
+type CrossingState = {
+  from: number;
+  to: number;
+  anchorId: number;
+  camera: { pan: { x: number; y: number }; zoom: number };
+};
+
 const PASSAGE_MS = 1100;
+const CROSSING_MS = 1000;
 
 // The first visit opens on the Nebula; every visit after that, on the sky.
 // Read once, when the app loads - React may run the loading effect twice, and
@@ -58,6 +71,12 @@ function App() {
   const [skyView, setSkyView] = useState<SkyView>({ x: 0, y: 0, zoom: 1 });
   const [journey, setJourney] = useState<Journey | null>(null);
   const [progress, setProgress] = useState(0);
+  const [crossing, setCrossing] = useState<CrossingState | null>(null);
+  // where the constellation of a lore just crossed into starts its camera
+  const [arrivalCamera, setArrivalCamera] = useState<{
+    pan: { x: number; y: number };
+    zoom: number;
+  }>();
   // the constellation's camera, for a rise to start where it stands
   const insideCamera = useRef({ pan: { x: 0, y: 0 }, zoom: 1 });
   const reportCamera = useCallback(
@@ -110,6 +129,8 @@ function App() {
         layoutConstellation(
           entities.filter((e) => ids.has(e.id) && e.id !== selfId),
           allRelationships,
+          // everyone else may turn up at the border
+          entities.filter((e) => e.id !== selfId),
         ),
       );
     }
@@ -119,6 +140,34 @@ function App() {
     () => layoutSky(lores, layouts, memberships, allRelationships, selfId),
     [lores, layouts, memberships, allRelationships, selfId],
   );
+  // the lores each entity lives in, and how many entities two lores share
+  const { loresOf, shared } = useMemo(() => {
+    const loresOf = new Map<number, number[]>();
+    for (const m of memberships)
+      loresOf.set(m.entity_id, [...(loresOf.get(m.entity_id) ?? []), m.lore_id]);
+    const shared = new Map<string, number>();
+    for (const ids of loresOf.values())
+      for (const a of ids)
+        for (const b of ids)
+          if (a !== b) shared.set(`${a}-${b}`, (shared.get(`${a}-${b}`) ?? 0) + 1);
+    return { loresOf, shared };
+  }, [memberships]);
+  // The doors on an entity's card: the lores it lives in, other than the one
+  // open. Inside a lore, those sharing the most with it come first - the
+  // likeliest doors on top; in the sky, the lores that are most yours.
+  const homesOf = (entityId: number, open: number | null): Door[] =>
+    (loresOf.get(entityId) ?? [])
+      .filter((id) => id !== open)
+      .map((id) => ({
+        id,
+        name: lores.find((l) => l.id === id)?.name ?? "",
+        weight:
+          open === null
+            ? (sky.lores.find((s) => s.lore.id === id)?.yours ?? 0)
+            : (shared.get(`${open}-${id}`) ?? 0),
+      }))
+      .sort((a, b) => b.weight - a.weight || a.name.localeCompare(b.name))
+      .map(({ id, name }) => ({ id, name }));
 
   // a passage runs on its own clock; when a dive ends, the lore takes over
   useEffect(() => {
@@ -143,6 +192,36 @@ function App() {
     return () => cancelAnimationFrame(frame);
   }, [journey, selfId]);
 
+  // a crossing runs on its own clock too; when it ends, the new lore takes
+  // over with the anchor in focus, exactly where it stood
+  useEffect(() => {
+    if (crossing === null) return;
+    let frame = 0;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / CROSSING_MS);
+      setProgress(t);
+      if (t < 1) {
+        frame = requestAnimationFrame(step);
+        return;
+      }
+      setArrivalCamera(
+        crossingCamera(
+          layouts.get(crossing.from) ?? EMPTY_LAYOUT,
+          layouts.get(crossing.to) ?? EMPTY_LAYOUT,
+          crossing.anchorId,
+          crossing.camera,
+        ),
+      );
+      setPlace({ kind: "lore", loreId: crossing.to });
+      setFocusedId(crossing.anchorId);
+      setArrivalGloss(null);
+      setCrossing(null);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [crossing, layouts]);
+
   const focus = (id: number, gloss: string | null) => {
     setFocusedId(id);
     setArrivalGloss(gloss);
@@ -152,7 +231,8 @@ function App() {
     focusAfter: number | null = null,
     glossAfter: string | null = null,
   ) => {
-    if (journey !== null) return;
+    if (journey !== null || crossing !== null) return;
+    setArrivalCamera(undefined);
     setProgress(0);
     setJourney({
       kind: "dive",
@@ -163,7 +243,7 @@ function App() {
     });
   };
   const rise = () => {
-    if (place?.kind !== "lore" || journey !== null) return;
+    if (place?.kind !== "lore" || journey !== null || crossing !== null) return;
     setProgress(0);
     setSkyFocus(place.loreId);
     setPlace({ kind: "sky" });
@@ -199,9 +279,21 @@ function App() {
     if (place?.kind === "sky") {
       dive(home.lore.id, id, gloss);
     } else {
+      setArrivalCamera(undefined);
       setPlace({ kind: "lore", loreId: home.lore.id });
       focus(id, gloss);
     }
+  };
+  // a door on a border card: cross into that lore through the entity
+  const cross = (entityId: number, to: number) => {
+    if (place?.kind !== "lore" || journey !== null || crossing !== null) return;
+    setProgress(0);
+    setCrossing({
+      from: place.loreId,
+      to,
+      anchorId: entityId,
+      camera: insideCamera.current,
+    });
   };
 
   const openLore =
@@ -225,13 +317,34 @@ function App() {
           <Logo className="w-10 h-10" />
           <Wordmark />
         </a>
-        <div className="w-full">
-          <Search
-            entities={entities}
-            onSelect={(id) => openEntity(id, null)}
-          />
-        </div>
+        {/* where you are, beside the name of the place it all belongs to.
+            Inside a lore, "lores" is the way back up. */}
+        <nav className="mr-auto ml-3 flex items-baseline gap-2 min-w-0">
+          {openLore && journey === null ? (
+            <>
+              <button
+                onClick={rise}
+                className="shrink-0 font-mono text-muted text-[11px] uppercase tracking-[0.22em] cursor-pointer hover:text-here transition-colors"
+              >
+                lores
+              </button>
+              <span className="shrink-0 font-mono text-line text-[11px]">/</span>
+              <span className="font-serif text-ink text-[16px] truncate">
+                {openLore.name}
+              </span>
+            </>
+          ) : (
+            <span className="font-mono text-ink text-[11px] uppercase tracking-[0.22em]">
+              lores
+            </span>
+          )}
+        </nav>
         <ThemeToggle />
+      </div>
+      {/* the search sits over the panel: finding is the first half of
+          reading, and it takes the panel's column, never the map's */}
+      <div className="absolute top-4 right-16 z-20 w-101">
+        <Search entities={entities} onSelect={(id) => openEntity(id, null)} />
       </div>
 
       {showSky && (
@@ -244,47 +357,40 @@ function App() {
           onView={setSkyView}
           onFocusLore={setSkyFocus}
           onEnter={(id) => dive(id)}
+          homesOf={(id) => homesOf(id, null)}
+          onOpen={(entityId, loreId) => dive(loreId, entityId)}
           passage={journey}
           progress={progress}
         />
       )}
-      {!showSky && place?.kind === "lore" && (
+      {crossing !== null && (
+        <Crossing
+          from={layouts.get(crossing.from) ?? EMPTY_LAYOUT}
+          to={layouts.get(crossing.to) ?? EMPTY_LAYOUT}
+          anchorId={crossing.anchorId}
+          anchorName={
+            entities.find((e) => e.id === crossing.anchorId)?.name ?? ""
+          }
+          camera={crossing.camera}
+          progress={progress}
+        />
+      )}
+      {!showSky && crossing === null && place?.kind === "lore" && (
         <Constellation
           key={place.loreId}
-          layout={layouts.get(place.loreId) ?? { nodes: [], links: [] }}
+          layout={layouts.get(place.loreId) ?? EMPTY_LAYOUT}
           selfId={selfId}
           allRelationships={allRelationships}
           focusedId={focusedId}
           onFocus={focus}
           onCamera={reportCamera}
+          homesOf={(id) => homesOf(id, place.loreId)}
+          onCross={cross}
+          initialCamera={arrivalCamera}
         />
       )}
 
-      {/* where you are, right above what you are reading. Its own strip
-          over the panel, so it never competes with the search for the
-          topbar, however narrow the window. Inside a lore, "lores" is the way
-          back up. */}
-      <nav className="absolute top-19 right-12 z-10 w-105 px-6 flex items-baseline gap-2 min-w-0">
-        {openLore && journey === null ? (
-          <>
-            <button
-              onClick={rise}
-              className="shrink-0 font-mono text-muted text-[11px] uppercase tracking-[0.22em] cursor-pointer hover:text-here transition-colors"
-            >
-              lores
-            </button>
-            <span className="shrink-0 font-mono text-line text-[11px]">/</span>
-            <span className="font-serif text-ink text-[16px] truncate">
-              {openLore.name}
-            </span>
-          </>
-        ) : (
-          <span className="font-mono text-ink text-[11px] uppercase tracking-[0.22em]">
-            lores
-          </span>
-        )}
-      </nav>
-      <div className="absolute top-26 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      <div className="absolute top-17 right-12 bottom-5 z-10 w-105 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
         {showSky && focusedSkyLore ? (
           <LorePanel
             key={focusedSkyLore.lore.id}

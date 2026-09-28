@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from "react";
+import type { Layout } from "./layout";
 
 // the reading panel floats over the right of the drawing: 420px wide, 3rem
 // from the edge
@@ -65,3 +66,26 @@ export function zoomBetween(
     k,
   };
 }
+
+// Where the anchor sits in each lore, and the camera that keeps it on the
+// same spot of the screen in the lore being entered.
+export function crossingCamera(
+  from: Layout,
+  to: Layout,
+  anchorId: number,
+  camera: { pan: { x: number; y: number }; zoom: number },
+): { pan: { x: number; y: number }; zoom: number } {
+  const find = (l: Layout) =>
+    [...l.nodes, ...l.border].find((n) => n.id === anchorId);
+  const a = find(from);
+  const b = find(to);
+  if (a === undefined || b === undefined) return camera;
+  return {
+    pan: {
+      x: camera.pan.x + (a.x - b.x) * camera.zoom,
+      y: camera.pan.y + (a.y - b.y) * camera.zoom,
+    },
+    zoom: camera.zoom,
+  };
+}
+
