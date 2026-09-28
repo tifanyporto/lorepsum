@@ -1,13 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.models import User
+from app.models import Entity, User
 from app.schemas import UserCreate, UserRead, UserUpdate
 from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
 from datetime import datetime, timezone
 from uuid import UUID
 
 
 router = APIRouter()
+
+
+def refusal(err: IntegrityError, db, self_entity_id: int | None) -> HTTPException:
+    """Turn the database's refusal of a user row into an answer that says why.
+
+    Four constraints can say no, and each one means something different to
+    whoever sent the request.
+    """
+    code = err.orig.pgcode
+    constraint = err.orig.diag.constraint_name
+    if code == errorcodes.UNIQUE_VIOLATION:
+        return HTTPException(status_code=409, detail="this email or self_entity_id is already taken")
+    if constraint == "users_birth_date_fkey":
+        # the composite key is checked before the plain one, so a self entity
+        # that does not exist surfaces here too - name the real problem
+        if self_entity_id is not None and db.get(Entity, self_entity_id) is None:
+            return HTTPException(status_code=422, detail="self_entity_id points at no entity")
+        return HTTPException(status_code=422, detail="birth_date_id must be one of the self entity's own dates")
+    if constraint == "users_birth_date_needs_self":
+        return HTTPException(status_code=422, detail="a date of birth needs a self entity first")
+    if code == errorcodes.FOREIGN_KEY_VIOLATION:
+        return HTTPException(status_code=422, detail="self_entity_id points at no entity")
+    raise err
+
 
 @router.get("/users", response_model=list[UserRead])
 def list_users(db = Depends(get_db)):
@@ -16,17 +41,17 @@ def list_users(db = Depends(get_db)):
 @router.post("/users", response_model=UserRead, status_code=201)
 def create_user(payload: UserCreate, db = Depends(get_db)):
     new_user = User(
-        name=payload.name,
         email=payload.email,
         password_hash=payload.password_hash,
         self_entity_id=payload.self_entity_id,
+        birth_date_id=payload.birth_date_id,
     )
     db.add(new_user)
     try:
         db.commit()
     except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=409, detail="this email or self_entity_id is already taken") from err
+        raise refusal(err, db, payload.self_entity_id) from err
     db.refresh(new_user)
     return new_user
 
@@ -34,10 +59,11 @@ def current_user(db = Depends(get_db)) -> User:
     """Who is asking. Every endpoint that needs an owner depends on this.
 
     Temporary: with no session there is nothing to read, so it is fixed on the
-    dev user. It becomes a session read once login exists (#14), and not one
-    caller changes when it does.
+    dev user - by email, the one thing about a person the account itself owns.
+    It becomes a session read once login exists (#14), and not one caller
+    changes when it does.
     """
-    user = db.query(User).filter(User.name == "dev").first()
+    user = db.query(User).filter(User.email == "dev@lorepsum.local").first()
     if user is None:
         raise HTTPException(status_code=404, detail="user not found")
     return user
@@ -60,13 +86,16 @@ def update_user(user_id: UUID, payload: UserUpdate, db = Depends(get_db)):
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="user not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(user, field, value)
     try:
         db.commit()
     except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=409, detail="this email or self_entity_id is already taken") from err
+        # after the rollback `user` is back to what is stored, so the entity to
+        # check is the one the request asked for, when it asked for one
+        raise refusal(err, db, changes.get("self_entity_id", user.self_entity_id)) from err
     db.refresh(user)
     return user
 

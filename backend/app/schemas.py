@@ -2,22 +2,25 @@ from datetime import date as date_type, datetime
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
+# no name anywhere in the user schemas: the name belongs to the you-node, and
+# the account reaches it through self_entity_id
 class UserCreate(BaseModel):
-    name: str
     email: str
     # no auth yet, so this is nullable and the `dev` user can exist without a
     # password. Once sign-up exists it becomes `password: str` and the hash is
     # computed in here, never received ready-made from outside.
     password_hash: str | None = None
     self_entity_id: int | None = None
+    # one of the self entity's own dates - the database refuses anyone else's
+    birth_date_id: int | None = None
 
 
 # the hash is absent on purpose: this is what goes out over the wire
 class UserRead(BaseModel):
     id: UUID
-    name: str
     email: str
     self_entity_id: int | None
+    birth_date_id: int | None
     email_verified_at: datetime | None
     last_login_at: datetime | None
     created_at: datetime
@@ -26,10 +29,10 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class UserUpdate(BaseModel):
-    name: str | None = None
     email: str | None = None
     password_hash: str | None = None
     self_entity_id: int | None = None
+    birth_date_id: int | None = None
 
 class LoreCreate(BaseModel):
     # owner_id is absent on purpose: who owns a lore comes from who is asking,

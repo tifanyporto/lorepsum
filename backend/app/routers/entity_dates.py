@@ -65,5 +65,13 @@ def delete_entity_date(date_id: int, db=Depends(get_db)):
     if entity_date is None:
         raise HTTPException(status_code=404, detail="date not found")
     db.delete(entity_date)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as err:
+        db.rollback()
+        # an account points at this date as its date of birth, and the
+        # database refuses to let registration data vanish from under it
+        if err.orig.pgcode == errorcodes.FOREIGN_KEY_VIOLATION:
+            raise HTTPException(status_code=409, detail="this date is an account's date of birth; it cannot be deleted while the account exists") from err
+        raise
     return

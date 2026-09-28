@@ -21,12 +21,14 @@ from app.models import User, EntityType, Entity, Relationship, Lore, EntityLore,
 db = SessionLocal()
 
 if "--reset" in sys.argv:
-    # order matters: children before parents, or the foreign keys refuse
+    # order matters: children before parents, or the foreign keys refuse. The
+    # account lets go of its you-node and its date of birth first - both are
+    # RESTRICT, so while it points at them nothing underneath can be deleted
+    db.query(User).update({User.self_entity_id: None, User.birth_date_id: None})
     db.query(EntityDate).delete()
     db.query(EntityLore).delete()
     db.query(Relationship).delete()
     db.query(Lore).delete()
-    db.query(User).update({User.self_entity_id: None})
     db.query(Entity).delete()
     db.query(User).delete()
     db.query(EntityType).delete()
@@ -45,8 +47,9 @@ for name in TYPES:
 db.flush()
 
 # ------------------------------------------------------------------- user
-# the user is born first, pointing at nothing: the entity does not exist yet
-dev = User(name="dev", email="dev@lorepsum.local")
+# the user is born first, pointing at nothing: the entity does not exist yet.
+# It has no name of its own - the name is the you-node's, created below.
+dev = User(email="dev@lorepsum.local")
 db.add(dev)
 db.flush()
 
@@ -258,8 +261,16 @@ DATES = [
     ("Apartment 4B", date(2007, 9, 24), "she moved in"),
 ]
 
+datas = {}
 for nome, quando, rotulo in DATES:
-    db.add(EntityDate(entity_id=ents[nome].id, date=quando, label=rotulo))
+    d = EntityDate(entity_id=ents[nome].id, date=quando, label=rotulo)
+    db.add(d)
+    datas[(nome, rotulo)] = d
+db.flush()
+
+# the account's date of birth is not a copy: it points at the you-node's own
+# date, so editing the date on the card is editing the registration
+dev.birth_date_id = datas[("dev", "born")].id
 
 for source, label, target, weight, gloss in R:
     db.add(Relationship(
@@ -279,5 +290,5 @@ print(f"  with a gloss    {db.query(Relationship).filter(Relationship.gloss.isno
 print(f"  dates           {db.query(EntityDate).count()}")
 print(f"  lores           {db.query(Lore).count()}")
 print(f"  memberships     {db.query(EntityLore).count()}")
-print(f"  user            {dev.name!r}, self_entity_id={dev.self_entity_id}")
+print(f"  user            {dev.email!r}, self_entity_id={dev.self_entity_id}, birth_date_id={dev.birth_date_id}")
 db.close()

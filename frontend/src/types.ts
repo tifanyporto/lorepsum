@@ -7,10 +7,11 @@ type WordmarkProps = {
   className?: string;
 };
 
+// no name: the name is the you-node's, read from its entity
 type User = {
   id: string;
-  name: string;
   self_entity_id: number | null;
+  birth_date_id: number | null;
 };
 
 type EntityType = {

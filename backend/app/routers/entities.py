@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
-from app.models import Entity, EntityImage
+from app.models import Entity, EntityImage, User
 from app.schemas import EntityRead, EntityCreate, EntityUpdate
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
@@ -39,6 +39,11 @@ def delete_entity( entity_id: int, hard: bool = False, db=Depends(get_db)):
     paths = []
     if entity is None:
         raise HTTPException(status_code=404, detail="entity not found")
+    # nobody deletes a you-node while its account exists. The database already
+    # refuses a hard delete (users.self_entity_id is RESTRICT), but archiving is
+    # only an UPDATE and slips past it - so both are refused here, up front.
+    if db.query(User).filter(User.self_entity_id == entity_id).first() is not None:
+        raise HTTPException(status_code=409, detail="this entity is an account's you-node; it cannot be deleted while the account exists")
     if hard:
         images = db.query(EntityImage).filter(EntityImage.entity_id == entity_id).all()
         paths = [i.path for i in images]

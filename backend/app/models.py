@@ -1,16 +1,47 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, SmallInteger, String, Date, DateTime, ForeignKey, CheckConstraint, UniqueConstraint, Index, Boolean, text
+from sqlalchemy import Column, Integer, SmallInteger, String, Date, DateTime, ForeignKey, ForeignKeyConstraint, CheckConstraint, UniqueConstraint, Index, Boolean, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from app.database import Base
 
 class User(Base):
+    """The account. It stores what only an account has - email, password,
+    login - and no facts about the person.
+
+    The person is the you-node, an entity like any other, and every fact about
+    them lives on that side, stored once: the name on the entity, the date of
+    birth among its dates. The account points at the ones registration needs.
+    That is what makes the you-node special - nothing in its own row, only the
+    account pointing at it.
+    """
+
     __tablename__ = "users"
+    __table_args__ = (
+        # the pair must match one row's (id, entity_id), so the date of birth can
+        # only ever be one of your own dates - never someone else's birthday
+        ForeignKeyConstraint(
+            ["birth_date_id", "self_entity_id"],
+            ["entity_dates.id", "entity_dates.entity_id"],
+            ondelete="RESTRICT",
+            name="users_birth_date_fkey",
+        ),
+        # a NULL switches a composite key off, so with no self entity the pair
+        # above goes unchecked. A date of birth needs the self entity first.
+        CheckConstraint(
+            "birth_date_id IS NULL OR self_entity_id IS NOT NULL",
+            name="users_birth_date_needs_self",
+        ),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    name = Column(String, nullable=False)
+    # no name column: the name is the you-node's, read through self_entity_id
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String)
-    self_entity_id = Column(Integer, ForeignKey("entities.id", ondelete="SET NULL"), unique=True)
+    # RESTRICT: nobody deletes the you-node while the account exists
+    self_entity_id = Column(Integer, ForeignKey("entities.id", ondelete="RESTRICT", name="users_self_entity_id_fkey"), unique=True)
+    # one of the you-node's own dates, not a copy of it: editing the date on the
+    # card is editing the registration. Nullable because the account is born
+    # before its entity, which needs an owner to exist.
+    birth_date_id = Column(Integer)
     email_verified_at = Column(DateTime(timezone=True))
     last_login_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -94,7 +125,14 @@ class EntityDate(Base):
     """
 
     __tablename__ = "entity_dates"
-    __table_args__ = (UniqueConstraint("entity_id", "date", "label"),)
+    __table_args__ = (
+        UniqueConstraint("entity_id", "date", "label"),
+        # the target of the account's date of birth: a foreign key may only
+        # point at columns that carry a unique constraint on exactly them.
+        # `id` alone is already unique; the pair is what lets the account
+        # demand that the date belongs to its own entity.
+        UniqueConstraint("id", "entity_id", name="entity_dates_id_entity_id_key"),
+    )
 
     id = Column(Integer, primary_key=True)
     entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
