@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
 from app.models import Entity, EntityImage, User
+from app.routers.users import current_user
 from app.schemas import EntityRead, EntityCreate, EntityUpdate
 from sqlalchemy.exc import IntegrityError
+from psycopg2 import errorcodes
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,14 +16,27 @@ def list_entity(db = Depends(get_db)):
     return db.query(Entity).filter(Entity.archived_at.is_(None)).all()
 
 @router.post("/entities", response_model=EntityRead)
-def create_entity(payload: EntityCreate, db=Depends(get_db)):
-    new_entity = Entity(name=payload.name, entity_type_id=payload.entity_type_id, description=payload.description, attributes=payload.attributes)
+def create_entity(payload: EntityCreate, user: User = Depends(current_user), db=Depends(get_db)):
+    # the owner is whoever is asking, never a field in the body - the same rule
+    # as lores: letting the client name the owner would let anyone create an
+    # entity inside someone else's account
+    new_entity = Entity(
+        name=payload.name,
+        entity_type_id=payload.entity_type_id,
+        description=payload.description,
+        attributes=payload.attributes,
+        owner_id=user.id,
+    )
     db.add(new_entity)
     try:
         db.commit()
     except IntegrityError as err:
         db.rollback()
-        raise HTTPException(status_code=422, detail="invalid entity_type_id") from err
+        # the type is the only reference the body carries. Any other refusal is
+        # not the client's to fix, so it is not dressed up as a bad type.
+        if err.orig.pgcode == errorcodes.FOREIGN_KEY_VIOLATION:
+            raise HTTPException(status_code=422, detail="invalid entity_type_id") from err
+        raise
     db.refresh(new_entity)
     return new_entity
 
