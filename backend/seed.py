@@ -1,7 +1,7 @@
 """Fill a database with a small collection, for development: The Big Bang
-Theory in full, and a few smaller lores around it so the sky has something to
-show - lores that share entities, one none of your connections reaches, and
-one just created and still empty.
+Theory in full, and smaller lores around it - DC Comics, Songs I Love,
+Corinthians, Games and HQ's - so the sky has something to show: lores that
+share entities, and one entity that lives in three of them at once.
 
 The schema comes from Alembic; this only adds content. Run it against a database
 that has already been migrated:
@@ -41,7 +41,7 @@ if db.query(Entity).count() > 0:
     raise SystemExit("this database already holds entities; pass --reset to replace them")
 
 # ------------------------------------------------------------------ types
-TYPES = ["Character", "Place", "Object", "Concept", "Organization", "Person", "Film", "Music"]
+TYPES = ["Character", "Place", "Object", "Concept", "Organization", "Person", "Music", "Game", "Event", "Comic"]
 types = {}
 for name in TYPES:
     t = EntityType(name=name)
@@ -112,18 +112,6 @@ MORE = {
         ("Kryptonite", "Object", "A piece of a dead planet, and the only thing that makes the strongest man on Earth ordinary."),
         ("Vengeance", "Concept", "Wanting the past to be paid for. Called justice when it wears a costume, and something else when it does not."),
     ],
-    "Studio Ghibli": [
-        ("Hayao Miyazaki", "Person", "An animator who draws wind as carefully as faces, and who has retired several times without once managing it."),
-        ("Spirited Away", "Film", "A girl crosses into a bathhouse for spirits and has to work her way back out, one name at a time."),
-        ("My Neighbor Totoro", "Film", "Two sisters, a mother in hospital, and a forest spirit waiting at a bus stop in the rain. Nothing bad happens, which is its bravest decision."),
-        ("Princess Mononoke", "Film", "A war between a forest and an ironworks in which the film refuses, to the end, to choose a side."),
-        ("Howl's Moving Castle", "Film", "A young woman cursed into old age finds that it suits her better than being young did."),
-        ("Chihiro", "Character", "Ten years old, sulking in the back seat, and by the end the steadiest person in the spirit world."),
-        ("No-Face", "Character", "A spirit that becomes whatever it swallows, lonely enough to try to buy company with gold that is not real."),
-        ("Totoro", "Character", "Large, grey, mostly asleep, and visible only to the people who need him to be."),
-        ("San", "Character", "Raised by wolves, and furious at people for reasons the film takes seriously."),
-        ("The Bathhouse", "Place", "Where the spirits come to rest, run like a factory by a witch with enormous hands."),
-    ],
     "Songs I Love": [
         ("Bohemian Rhapsody", "Music", "Six minutes that refuse to be one song, and ended up everyone's anyway."),
         ("Under Pressure", "Music", "Two voices built for stadiums, meeting in a small room and leaving the bass line behind for everyone."),
@@ -133,6 +121,41 @@ MORE = {
         ("Clube da Esquina", "Music", "An album named after a street corner where friends met to play, and the sound of a whole city in the seventies."),
         ("Milton Nascimento", "Person", "A voice that sounds as if it were coming from further away than the room it is in."),
         ("Lô Borges", "Person", "Barely twenty when the corner became an album, and the one who kept writing the melodies nobody else would have tried."),
+    ],
+    "Corinthians": [
+        ("Sport Club Corinthians Paulista", "Organization", "A club founded in 1910 by workers in Bom Retiro, named after an English team on tour, and owned ever since by the people in the stands more than by anyone on paper."),
+        ("Neo Química Arena", "Place", "The stadium in Itaquera, in the east of the city, built for the opening of the 2014 World Cup. The north stand is where the noise is made."),
+        ("Parque São Jorge", "Place", "The old ground in Tatuapé, and still the heart of the club: the headquarters, the chapel, the memorial."),
+        ("Sócrates", "Person", "A doctor who played midfield with his heel as often as with his foot, and who treated a dressing room as a place to vote."),
+        ("Democracia Corinthiana", "Concept", "The early eighties, when the players decided everything by vote - training, travel, what went on the shirt - while the country outside still could not."),
+        ("Cássio", "Person", "A goalkeeper who arrived as a reserve in 2012 and, within months, made the saves that decided the best year the club ever had."),
+        ("Paolo Guerrero", "Person", "The Peruvian striker whose header in Yokohama won the world."),
+        ("Club World Cup 2012", "Event", "Yokohama, December 2012: one goal to nothing against Chelsea, watched by thousands who had crossed the planet to be there."),
+        ("Gaviões da Fiel", "Organization", "The largest organised supporters' group, founded in 1969 - as much a samba school and a political voice as a stand."),
+        ("Palmeiras", "Organization", "The rival across the city. The Derby has been played since 1917, and nobody in either house has ever called it just a game."),
+        ("Ronaldo", "Person", "A World Cup winner who came home in 2009 with his knees half gone, and still scored the goals the club needed."),
+        ("Loyalty", "Concept", "Staying when leaving would be easier, and not calling it a sacrifice."),
+    ],
+    "Games": [
+        ("Batman: Arkham Asylum", "Game", "Batman locked inside the asylum with everyone he ever put there: one night, one building, and the Joker on the speakers."),
+        ("Halo", "Game", "A soldier in green armour, a world shaped like a ring, and the reason one night of the week was never free."),
+        ("Super Mario Bros.", "Game", "A plumber, a princess who is always in another castle, and the first world a generation learned by heart."),
+        ("Mario", "Character", "A plumber who has never been seen plumbing, and has jumped more than anyone alive."),
+        ("Bowser", "Character", "A king of turtles who takes the same princess every time, loses to the same plumber every time, and keeps coming back."),
+        ("The Legend of Zelda: Ocarina of Time", "Game", "A boy with a sword and an ocarina, travelling between childhood and adulthood by playing a song."),
+        ("Link", "Character", "A hero who never speaks, so that whoever holds the controller can."),
+        ("Hyrule", "Place", "A kingdom rebuilt from scratch in every game, and somehow always recognisable."),
+        ("Rivalry", "Concept", "Needing an opponent to know who you are."),
+    ],
+    "HQ's": [
+        ("Batman: The Killing Joke", "Comic", "One bad day, told twice: the origin of the Joker as he chooses to remember it, and a night that went further than any Batman story before it."),
+        ("Watchmen", "Comic", "Heroes as they would actually turn out, and a clock moving toward midnight through every chapter."),
+        ("Alan Moore", "Person", "A writer who took costumed heroes more seriously than anyone before him, and then asked for his name to be taken off the films."),
+        ("The Sandman", "Comic", "The lord of dreams, and seventy-five issues about stories: who tells them, and what they cost."),
+        ("Neil Gaiman", "Person", "A writer who made myth sound like something overheard at the next table."),
+        ("Turma da Mônica", "Comic", "A street in the Limoeiro neighbourhood, a girl with a stuffed rabbit, and the first comic most Brazilian children ever read."),
+        ("Mônica", "Character", "Short, strong, and armed with a blue rabbit called Sansão. The plans of the street to defeat her never work."),
+        ("Mauricio de Sousa", "Person", "A cartoonist who drew his own daughter, and then kept drawing for more than sixty years."),
     ],
     "Nebula": [
         ("Nostalgia", "Concept", "Missing a place that no longer exists in the form you remember, and sometimes never did."),
@@ -255,7 +278,6 @@ R = [
 
     # DC Comics
     ("dev", "grew up with", "Batman", 2, "The first one who made the dark look like a choice."),
-    ("dev", "played", "Arkham Asylum", 2, "Every corridor of it, more than once."),
     ("dev", "understands", "Vengeance", 1, "Without approving of it."),
     ("Batman", "fights", "The Joker", 3, "Neither would know who he was without the other."),
     ("Batman", "protects", "Gotham City", 3, None),
@@ -274,20 +296,7 @@ R = [
     ("The Flash", "member of", "Justice League", 2, None),
     ("Arkham Asylum", "stands in", "Gotham City", 2, None),
     ("Gotham City", "mirrors", "Metropolis", 1, "Night and day, drawn by the same company."),
-
-    # Studio Ghibli - nothing of yours reaches it yet, so it sits on the edge of the sky
-    ("Hayao Miyazaki", "directed", "Spirited Away", 3, None),
-    ("Hayao Miyazaki", "directed", "My Neighbor Totoro", 3, None),
-    ("Hayao Miyazaki", "directed", "Princess Mononoke", 3, None),
-    ("Hayao Miyazaki", "directed", "Howl's Moving Castle", 2, None),
-    ("Chihiro", "appears in", "Spirited Away", 3, None),
-    ("Chihiro", "works at", "The Bathhouse", 2, "For a witch who took her name as payment."),
-    ("No-Face", "follows", "Chihiro", 2, "The only person who offered him nothing, which is why he wanted it."),
-    ("No-Face", "haunts", "The Bathhouse", 1, None),
-    ("Totoro", "appears in", "My Neighbor Totoro", 3, None),
-    ("San", "appears in", "Princess Mononoke", 3, None),
-    ("Chihiro", "earns", "Friendship", 2, "Not given, and not bought - which is the whole point of the bathhouse."),
-    ("Totoro", "offers", "Friendship", 1, None),
+    ("The Joker", "lives for", "Rivalry", 2, "Without Batman, he has said, he would simply be bored."),
 
     # Songs I Love
     ("dev", "sings along to", "Bohemian Rhapsody", 2, "Every part, including the ones written for a choir."),
@@ -301,6 +310,51 @@ R = [
     ("Lô Borges", "recorded", "Clube da Esquina", 3, None),
     ("Clube da Esquina", "born in", "Belo Horizonte", 3, "On an actual corner, in Santa Tereza."),
     ("Clube da Esquina", "carries", "Nostalgia", 2, None),
+
+    # Corinthians
+    ("dev", "supports", "Sport Club Corinthians Paulista", 3, "A loyalty older than any reason for it."),
+    ("dev", "celebrated", "Club World Cup 2012", 2, "Awake before dawn, for a final played on the other side of the world."),
+    ("Sport Club Corinthians Paulista", "plays at", "Neo Química Arena", 3, None),
+    ("Sport Club Corinthians Paulista", "keeps its heart at", "Parque São Jorge", 2, None),
+    ("Sport Club Corinthians Paulista", "won", "Club World Cup 2012", 3, None),
+    ("Sport Club Corinthians Paulista", "plays the Derby against", "Palmeiras", 3, None),
+    ("Paolo Guerrero", "scored in", "Club World Cup 2012", 3, "The only goal of the final, a header at the far post."),
+    ("Cássio", "saved", "Club World Cup 2012", 3, None),
+    ("Sócrates", "played for", "Sport Club Corinthians Paulista", 3, None),
+    ("Sócrates", "led", "Democracia Corinthiana", 3, "With a vote of his own, and never more than one."),
+    ("Ronaldo", "played for", "Sport Club Corinthians Paulista", 2, None),
+    ("Gaviões da Fiel", "sings for", "Sport Club Corinthians Paulista", 3, None),
+    ("Gaviões da Fiel", "embodies", "Loyalty", 2, None),
+    ("Palmeiras", "feeds", "Rivalry", 3, "The Derby, since 1917."),
+    ("Friendship", "rests on", "Loyalty", 1, None),
+
+    # Games - and Halo night, the reason Halo lives in the show's lore too
+    ("dev", "played", "Batman: Arkham Asylum", 2, "Every corridor of it, more than once."),
+    ("dev", "grew up with", "Super Mario Bros.", 2, "The first world learned by heart."),
+    ("Batman: Arkham Asylum", "set in", "Arkham Asylum", 3, None),
+    ("Batman: Arkham Asylum", "stars", "Batman", 3, None),
+    ("Howard Wolowitz", "plays", "Halo", 2, "Wednesday is Halo night, and Wednesday is not negotiable."),
+    ("Leonard Hofstadter", "plays", "Halo", 1, None),
+    ("Raj Koothrappali", "plays", "Halo", 1, None),
+    ("Mario", "appears in", "Super Mario Bros.", 3, None),
+    ("Bowser", "appears in", "Super Mario Bros.", 3, None),
+    ("Mario", "rescues the princess from", "Bowser", 2, "From another castle, every time."),
+    ("Bowser", "keeps", "Rivalry", 2, None),
+    ("Link", "appears in", "The Legend of Zelda: Ocarina of Time", 3, None),
+    ("Link", "defends", "Hyrule", 3, None),
+    ("The Legend of Zelda: Ocarina of Time", "set in", "Hyrule", 2, None),
+    ("Super Mario Bros.", "carries", "Nostalgia", 2, None),
+
+    # HQ's
+    ("dev", "grew up with", "Turma da Mônica", 3, "Before reading was even the point."),
+    ("dev", "rereads", "The Sandman", 1, None),
+    ("Alan Moore", "wrote", "Watchmen", 3, None),
+    ("Alan Moore", "wrote", "Batman: The Killing Joke", 3, None),
+    ("Batman: The Killing Joke", "tells the origin of", "The Joker", 3, "One version of it. He prefers his past multiple choice."),
+    ("Neil Gaiman", "wrote", "The Sandman", 3, None),
+    ("Mauricio de Sousa", "created", "Turma da Mônica", 3, None),
+    ("Mônica", "appears in", "Turma da Mônica", 3, None),
+    ("The Comic Center of Pasadena", "stocks", "Watchmen", 1, None),
 ]
 
 # -------------------------------------------------------------------- lores
@@ -313,10 +367,10 @@ LORES = [
     ("Nebula", "Where things arrive before they belong anywhere. It starts as all you have, and becomes all that is left over."),
     ("The Big Bang Theory", "Four physicists, a waitress across the hall, and the apartment that held them."),
     ("DC Comics", "Two cities, one at night and one by day, and the people who cannot leave either of them alone."),
-    ("Studio Ghibli", "Films where the wind is a character and nobody is entirely the villain."),
     ("Songs I Love", "What plays when nobody else is choosing."),
-    # just created, nothing in it yet: the sky has to show that too
-    ("Books to Read", None),
+    ("Corinthians", "A club, a stadium, a stand, and the people who never once left."),
+    ("Games", "Worlds learned by heart, one controller at a time."),
+    ("HQ's", "Comics: the panels, the people who drew them, and the ones who read them too young."),
 ]
 
 lores = {}
@@ -360,8 +414,13 @@ BOTH = [
     ("Vengeance", "Nebula"),
     ("Soft Kitty", "Songs I Love"),
     ("Belo Horizonte", "Songs I Love"),
-    # three homes at once
-    ("Friendship", "Studio Ghibli"),
+    ("Halo", "The Big Bang Theory"),
+    ("Batman: Arkham Asylum", "DC Comics"),
+    ("Batman: The Killing Joke", "DC Comics"),
+    ("Loyalty", "Nebula"),
+    # three homes at once: the Joker, the Derby and Bowser all need someone
+    ("Rivalry", "DC Comics"),
+    ("Rivalry", "Corinthians"),
 ]
 for nome, lore_name in BOTH:
     db.add(EntityLore(entity_id=ents[nome].id, lore_id=lores[lore_name].id))
@@ -389,6 +448,9 @@ DATES = [
 
     ("The Roommate Agreement", date(2003, 11, 1), "signed"),
     ("Apartment 4B", date(2007, 9, 24), "she moved in"),
+
+    ("Sport Club Corinthians Paulista", date(1910, 9, 1), "founded"),
+    ("Club World Cup 2012", date(2012, 12, 16), "final"),
 ]
 
 datas = {}
