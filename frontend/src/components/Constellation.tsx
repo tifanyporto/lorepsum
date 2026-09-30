@@ -644,12 +644,47 @@ function Constellation({
                 </g>
               );
             }
+            // One of the lore's own that also lives elsewhere: the dot stays
+            // full - it belongs here - and a single blue stub leaves it
+            // outward, the sign the border already taught: an edge that does
+            // not end leads to something not on screen. Its card opens on
+            // hover; a click still focuses it, since it can be read here.
+            const elsewhere = homesOf(n.id).length > 0;
+            const out = Math.hypot(n.x ?? 0, n.y ?? 0) || 1;
+            const stub = (d: number) => ({
+              x: (n.x ?? 0) + ((n.x ?? 0) / out) * d,
+              y: (n.y ?? 0) + ((n.y ?? 0) / out) * d,
+            });
             return (
               <g
                 key={n.id}
-                onMouseEnter={() => setHoveredId(n.id)}
-                onMouseLeave={() => setHoveredId(null)}
+                onMouseEnter={() => {
+                  setHoveredId(n.id);
+                  if (elsewhere) cards.hover(n.id);
+                }}
+                onMouseLeave={() => {
+                  setHoveredId(null);
+                  if (elsewhere) cards.leave();
+                }}
               >
+                {elsewhere && (
+                  <g stroke="var(--color-beyond)" strokeWidth={1.3}>
+                    <line
+                      x1={stub(r + 2).x}
+                      y1={stub(r + 2).y}
+                      x2={stub(r + 10).x}
+                      y2={stub(r + 10).y}
+                      strokeOpacity={0.6}
+                    />
+                    <line
+                      x1={stub(r + 10).x}
+                      y1={stub(r + 10).y}
+                      x2={stub(r + 19).x}
+                      y2={stub(r + 19).y}
+                      strokeOpacity={0.2}
+                    />
+                  </g>
+                )}
                 {isFocused && (
                   <>
                     <circle

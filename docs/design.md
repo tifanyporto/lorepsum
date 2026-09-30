@@ -282,7 +282,7 @@ Drawing the DC lore, an edge leaves the crossover comic heading for Spider-Man, 
 
 **A border node next to the focus** follows the rule every neighbour follows: it is **named**. It keeps its colour — the name is written in `beyond` and the ring grows stronger — so a neighbour from elsewhere never passes for one from here.
 
-**An entity of the lore that also lives elsewhere** looks like any other entity of the lore. What the border marks is not belonging, but not belonging *here*.
+**An entity of the lore that also lives elsewhere** keeps its full dot — it belongs here — and a single blue stub leaves it outward: the border's own sign, an edge that does not end, saying that a way out starts here. Hovering opens the same card, and its doors cross with it as the anchor; a click still focuses it, since it can be read here. Exploring is exactly this: noticing that a thing you are looking at also lives somewhere else.
 
 *(Designed and not built: a **glow** — a diffuse radial gradient bleeding in from off-frame, with a radius proportional to the size of the neighbouring lore, announcing scale without stating a number. The look chosen for the border has no glow, and it would be a second exception to "no gradients". Open.)*
 
@@ -408,6 +408,9 @@ Kept here so none of it returns by accident.
 | **A ring around the lore in focus in the sky** | A large empty circle, worst on a sparse lore like the Nebula, where it drew more than the lore did. The lore itself lights up instead. |
 | **A floating label on the sky's bridges** | The same entity said "I live elsewhere" in two different ways, in the sky and at a border. It opens the border's card. |
 | **The trail in a strip of its own above the panel** | It read loose, belonging to nothing. It went beside the lockup, and the search took the panel's column. |
+| **The border's hollow ring on an entity of the lore that also lives elsewhere** | The ring means *not belonging here*. The same look would put an entity of the lore beside one that only hangs off it, and one gesture would do two things — the click pins a border node's card, and focuses one of the lore's own. |
+| **A ring, a satellite or a blue name** for an entity that also lives elsewhere | A ring reads, at a distance, as the rings of the focus; a satellite is a sign nobody has learned yet; a blue name breaks the rule that only the focus and its neighbours are named at rest. The stub reuses what the border already taught. |
+| **Leaving an entity that also lives elsewhere unmarked** | It hid the door. The card existed, and nothing on screen said to look for it. |
 
 ---
 
