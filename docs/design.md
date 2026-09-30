@@ -137,7 +137,7 @@ Two transitions, and the second one has a switch:
 - colour, opacity and size ease over **300ms** — this is what stops a focus change from flickering;
 - the camera glides over **500ms**, and that one is **disabled while dragging**. Every mouse move sets a new pan; with the transition on, the map trails half a second behind the cursor like rubber.
 
-The camera aims at the middle of **what the panel leaves uncovered**, not at the middle of the window — the drawing spans the whole window and the panel floats over its right side. *(A narrow window, where the panel covers nearly everything, is still open: #21.)*
+The camera aims at the middle of **what the panel leaves uncovered**, not at the middle of the window — the drawing spans the whole window and the panel floats over its right side. When the panel stops floating (below), the two are the same point again, and the camera needs no special case to know it.
 
 ### Pulling a node
 
@@ -161,7 +161,15 @@ Each name looks for a free spot around what it names — below first, where name
 
 The drawing fills the window; the reading panel — the **Focus** — floats over its right side, at the height the topbar leaves, and it is the panel that scrolls internally, never the page.
 
-**The extra width goes to the graph, not to the text.** The Focus has a fixed reading width (404px — the width of the search above it); the drawing takes the rest. Running text at 700px is unreadable; a graph at 700px is better.
+**The extra width goes to the graph, not to the text.** The Focus has a reading width of 404px — the width of the search above it — and the drawing takes the rest. Running text at 700px is unreadable; a graph at 700px is better.
+
+**What the panel takes is one number, and both halves read it.** `panelReserve(width)` returns the column plus its margin; the panel is sized from it and the camera aims around it, so the drawing and the frame cannot fall out of step. It answers in three bands:
+
+- **wide** — the panel keeps its 404px and the map takes everything else;
+- **tight** — the map is down to its 300px minimum, so the panel gives ground, down to 320px, the narrowest width still worth reading;
+- **narrow** (under ~684px) — the two no longer fit. The reserve is zero: the panel stops floating, the map keeps the whole window, and reading becomes an act — a `read` button opens the panel over the map, and closing it gives the map back. Choosing which half of a node to hide is not a layout; admitting there is no room is.
+
+In the narrow band the wordmark also steps aside, leaving the symbol: of the two things in the left column, the one that changes is where you are standing.
 
 **Two columns, two jobs, up to the topbar.** The left column is the map and where you are on it: the lockup, then the trail — `lores / The Big Bang Theory`, where `lores` is the way back up. The right column is finding and reading: the search sits over the panel, in its width, because a search ends in a card to read. Each column carries its own, so at no width do the two fight for the same strip.
 

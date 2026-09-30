@@ -1,22 +1,78 @@
 import { useEffect, useState, type RefObject } from "react";
 import type { Layout } from "./layout";
 
-// the reading panel floats over the right of the drawing: 404px wide - the
-// width of the search above it - and 4rem from the edge
-export const PANEL_RESERVE = 404 + 64;
-// below this much uncovered width no offset saves the view - the panel
-// covers nearly everything, and that is a question of its own (#21)
-const MIN_UNCOVERED = 320;
+// The reading panel floats over the right of the drawing, so its column is
+// the map's loss. These are the two ends of that column: the width it wants,
+// and the width below which it is no longer worth reading.
+export const PANEL_MAX = 404;
+export const PANEL_MIN = 320;
+// the margin it floats in, which is also the room the theme toggle sits in
+export const PANEL_GUTTER = 64;
+// the narrowest strip of map worth aiming at: under this, moving the camera
+// would only choose which half of the node is hidden
+const MAP_MIN = 300;
+
+// How much of the window the panel takes at this width - the column plus its
+// margin. It keeps the width it wants while the map can still spare it, then
+// gives ground; when it can no longer be both readable and beside the map,
+// the answer is zero: it stops floating, and the map keeps the whole window.
+// One source of truth - the panel is sized from this and the camera aims
+// around it, so the drawing and the frame cannot disagree.
+export function panelReserve(width: number): number {
+  const fits = Math.min(PANEL_MAX, width - PANEL_GUTTER - MAP_MIN);
+  return fits >= PANEL_MIN ? fits + PANEL_GUTTER : 0;
+}
 
 // The point the camera aims at: the middle of the strip the panel leaves
 // uncovered, not the middle of the <svg> - the <svg> spans the whole window
-// and the panel sits on top of its right side.
+// and the panel sits on top of its right side. With no panel floating the
+// two are the same point again.
 export function visibleCentre(width: number, height: number) {
-  const uncovered = width - PANEL_RESERVE;
-  return {
-    x: uncovered >= MIN_UNCOVERED ? uncovered / 2 : width / 2,
-    y: height / 2,
+  return { x: (width - panelReserve(width)) / 2, y: height / 2 };
+}
+
+// the band the topbar holds, measured from the top of the window
+const TOPBAR = 68;
+// How far from an edge a node has to sit before it counts as seen - a node
+// touching the border is technically visible and practically not. The two
+// are different because a name is wide and short: sideways it needs room for
+// the whole name, upwards only for its own line. Keeping them equal made the
+// camera slide for nodes that were perfectly readable where they stood.
+const KEEP_CLEAR_X = 100;
+const KEEP_CLEAR_Y = 40;
+
+// The camera that brings a point into view, and nothing more. A point already
+// inside the visible strip returns the camera untouched - reading a connection
+// must not drag the sky out from under you - and one outside returns the
+// shortest slide that brings it in. The same rule answers for a click on a
+// node and for a click on a line in the panel, so the two stop disagreeing.
+export function panToReveal(
+  point: { x: number; y: number },
+  camera: { pan: { x: number; y: number }; zoom: number },
+  box: { width: number; height: number },
+): { x: number; y: number } {
+  const centre = visibleCentre(box.width, box.height);
+  const uncovered = box.width - panelReserve(box.width);
+  // on a small window the margins would meet and cross; never let them ask
+  // for more than a third of what there is
+  const mx = Math.min(KEEP_CLEAR_X, uncovered / 3);
+  const my = Math.min(KEEP_CLEAR_Y, (box.height - TOPBAR) / 3);
+  const at = {
+    x: centre.x + camera.pan.x + point.x * camera.zoom,
+    y: centre.y + camera.pan.y + point.y * camera.zoom,
   };
+  const dx =
+    at.x < mx ? mx - at.x : at.x > uncovered - mx ? uncovered - mx - at.x : 0;
+  const dy =
+    at.y < TOPBAR + my
+      ? TOPBAR + my - at.y
+      : at.y > box.height - my
+        ? box.height - my - at.y
+        : 0;
+  // the same object when nothing moves, so a render that changes no camera
+  // cannot schedule another one
+  if (dx === 0 && dy === 0) return camera.pan;
+  return { x: camera.pan.x + dx, y: camera.pan.y + dy };
 }
 
 // The size of an element, kept current. It starts at the window's size - the

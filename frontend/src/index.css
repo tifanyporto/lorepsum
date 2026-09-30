@@ -13,6 +13,13 @@
   --font-serif: "Fraunces", Georgia, serif;
   --font-mono: "IBM Plex Mono", monospace;
   --animate-fade-in: fade-in 0.18s ease-out;
+  /* Detail arriving on a drawing that is already there: opacity only, never
+     movement - the nodes were on screen the frame before, and anything that
+     slides would break the continuity the passage is built on. `backwards`
+     and not `both`: it holds the invisible start through the delay, and then
+     hands the opacity back to the element, so nothing can be left hidden by
+     an animation that did not get to finish. */
+  --animate-appear: appear 0.45s ease-out backwards;
 }
 
 :root[data-theme="dark"] {
@@ -40,6 +47,15 @@
   to {
     transform: scale(3.5);
     opacity: 0;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

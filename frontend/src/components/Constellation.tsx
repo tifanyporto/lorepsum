@@ -1,8 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { forceSimulation, forceLink, forceX, forceY } from "d3-force";
 import type { Relationship } from "../types";
 import { EDGE_CLEAR_RADIUS, edgePath, keepClear } from "../graph/geometry";
-import { PANEL_RESERVE, useBoxSize, visibleCentre } from "../graph/camera";
+import {
+  panelReserve,
+  panToReveal,
+  useBoxSize,
+  visibleCentre,
+} from "../graph/camera";
 import { pageFont, placeLabels, spotsAround } from "../graph/labels";
 import type { GraphLink, GraphNode, Layout } from "../graph/layout";
 import YouNode from "./YouNode";
@@ -10,6 +15,11 @@ import LoreCard, { type Door } from "./LoreCard";
 import { useCard } from "./useCard";
 
 type PositionedLink = { source: GraphNode; target: GraphNode };
+
+// The horizon arrives after the names. It is the furthest thing in the
+// drawing and the last thing you need, so it settles last - the difference
+// is small enough to feel like depth rather than like a queue.
+const HORIZON_DELAY = "0.18s";
 
 // A pull is a gesture on springs. Every node is tied to its home, and every
 // edge rests at the length it has at home, so at home nothing pulls on
@@ -68,8 +78,29 @@ function Constellation({
     panX: number;
     panY: number;
   } | null>(null);
-  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
-  const [graphLinks, setGraphLinks] = useState<PositionedLink[]>([]);
+  // The drawing's own nodes and edges, made while rendering rather than in an
+  // effect. An effect runs after the browser has painted, so filling these in
+  // one meant the constellation's first frame was an empty desk and the whole
+  // drawing arrived on the second - the flash on entering a lore. Endpoints
+  // are resolved here too, so an edge knows both its ends on the first frame
+  // instead of waiting for the force layout to swap the ids for nodes.
+  const { graphNodes, graphLinks } = useMemo(() => {
+    // fresh objects every time: a pull moves the nodes in place, and the
+    // layout they came from has to stay where it is
+    const nodes: GraphNode[] = [
+      ...layout.nodes.map((p) => ({ ...p })),
+      ...layout.border.map((p) => ({ ...p, outside: true })),
+    ];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const links: PositionedLink[] = [];
+    for (const l of [...layout.links, ...layout.borderLinks]) {
+      const source = byId.get(l.source);
+      const target = byId.get(l.target);
+      if (source !== undefined && target !== undefined)
+        links.push({ source, target });
+    }
+    return { graphNodes: nodes, graphLinks: links };
+  }, [layout]);
   // what a pull can do to the graph, built with the layout: each node's home,
   // and the three moments of a pull - taking hold, moving, letting go
   const liveRef = useRef<{
@@ -113,6 +144,19 @@ function Constellation({
     return () => cancelAnimationFrame(frame);
   }, [initialCamera, layout, focusedId, zoom]);
 
+  // The focus can change without the camera being asked: a line in the
+  // reading panel changes it, and so does arriving by a crossing. When it
+  // does, the node in focus can be off screen - its pulse lighting where
+  // nobody can see it. The camera answers here, and only when it must: the
+  // shortest slide that brings the focus into the strip the panel leaves
+  // uncovered, and nothing at all while it is already there.
+  useEffect(() => {
+    const at = layout.nodes.find((n) => n.id === focusedId);
+    if (at === undefined || at.x == null || at.y == null) return;
+    const point = { x: at.x, y: at.y };
+    setPan((p) => panToReveal(point, { pan: p, zoom }, boxSize));
+  }, [focusedId, layout, zoom, boxSize]);
+
   useEffect(() => {
     // the <svg>
     const el = svgRef.current;
@@ -132,16 +176,11 @@ function Constellation({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoom]);
 
+  // The live simulation runs over the very objects being drawn, so a pull
+  // moves what is on screen.
   useEffect(() => {
-    // fresh objects every time: a pull moves the nodes in place, and the
-    // layout they came from has to stay where it is
-    const nodes: GraphNode[] = [
-      ...layout.nodes.map((p) => ({ ...p })),
-      ...layout.border.map((p) => ({ ...p, outside: true })),
-    ];
-    const links: GraphLink[] = [...layout.links, ...layout.borderLinks].map(
-      (l) => ({ ...l }),
-    );
+    const nodes = graphNodes;
+    const links = graphLinks as unknown as GraphLink[];
 
     // Where the layout put each node is its home. When a pull ends, every
     // node goes back here.
@@ -223,14 +262,12 @@ function Constellation({
       },
     };
 
-    setGraphNodes(nodes);
-    setGraphLinks(links as unknown as PositionedLink[]);
     return () => {
       live.stop();
       cancelAnimationFrame(returning);
       liveRef.current = null;
     };
-  }, [layout]);
+  }, [graphNodes, graphLinks, layout]);
 
   // who touches the focused entity — decides who shows a name without hover
   const neighborIds = new Set<number>();
@@ -319,16 +356,15 @@ function Constellation({
     ],
   );
 
-  // what a click on a node does: focus it, answer for the arrival, and glide
-  // the camera to it. The camera aims at the node's home, so a click during
-  // a pull's return lands where the node is going, not where it passes.
+  // what a click on a node does: focus it and answer for the arrival. It does
+  // not move the camera itself - a node you just clicked is a node you can
+  // see, and the effect above decides for every way of changing the focus at
+  // once, so clicking a line and clicking a node behave the same.
   const focusNode = (n: GraphNode) => {
-    const at = liveRef.current?.home.get(n.id) ?? { x: n.x ?? 0, y: n.y ?? 0 };
     const arrival = allRelationships.find(
       (r) => r.source_id === focusedId && r.target_id === n.id,
     );
     onFocus(n.id, arrival?.gloss ?? null);
-    setPan({ x: -at.x * zoom, y: -at.y * zoom });
   };
   // the pointer, in the drawing's own coordinates: the camera's translate and
   // scale, undone
@@ -471,7 +507,10 @@ function Constellation({
                 key={`${l.source.id}-${l.target.id}`}
                 // the stroke eases; the path itself never does, or it would
                 // lag half a second behind the nodes it joins during a pull
-                className="transition-[stroke,stroke-opacity,stroke-width] duration-300"
+                className={`transition-[stroke,stroke-opacity,stroke-width] duration-300${
+                  leaves ? " animate-appear" : ""
+                }`}
+                style={leaves ? { animationDelay: HORIZON_DELAY } : undefined}
               />
             );
           })}
@@ -534,6 +573,8 @@ function Constellation({
               return (
                 <g
                   key={n.id}
+                  className="animate-appear"
+                  style={{ animationDelay: HORIZON_DELAY }}
                   onMouseEnter={() => {
                     setHoveredId(n.id);
                     cards.hover(n.id);
@@ -653,8 +694,10 @@ function Constellation({
             );
           })}
 
-          {/* the names, over every node, each where placeLabels put it */}
-          <g className="pointer-events-none">
+          {/* the names, over every node, each where placeLabels put it.
+              None of them exists in the sky, so entering a lore is where they
+              are born: they arrive instead of being switched on. */}
+          <g className="pointer-events-none animate-appear">
             {graphNodes.map((n) => {
               const at = labels.get(String(n.id));
               if (at === undefined) return null;
@@ -704,7 +747,7 @@ function Constellation({
         );
         // the side facing out of the screen - unless the card would run under
         // the panel or off the edge there
-        const uncovered = boxSize.width - PANEL_RESERVE;
+        const uncovered = boxSize.width - panelReserve(boxSize.width);
         let side: "left" | "right" = x < centre.x ? "left" : "right";
         if (side === "right" && x + 250 > uncovered) side = "left";
         if (side === "left" && x - 250 < 0) side = "right";

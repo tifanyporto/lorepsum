@@ -34,22 +34,23 @@ function Focus({
   // written in the colour of the horizon
   isOutside?: (id: number) => boolean;
 }) {
-  const [entity, setEntity] = useState<Entity>();
-  const [relationships, setRelationships] = useState<Relationship[]>([]);
+  // Who is on the card and what it says come from what the app already
+  // holds - it loads every entity and every connection at the start, and
+  // passes both in. Fetching them again by id meant the panel drew its empty
+  // shell until the answer arrived: on entering a lore, a whole card's worth
+  // of canvas blanked and refilled, which reads as a flash.
+  const entity = entities.find((e) => e.id === focusedId);
+  const relationships = allRelationships.filter(
+    (r) => r.source_id === focusedId,
+  );
+  // the images are the one thing the app does not carry, so they still come
+  // per entity; the cover has a placeholder to stand in until they do
   const [entityImages, setEntityImages] = useState<EntityImage[]>([]);
   // which connection types are expanded
   const [openTypes, setOpenTypes] = useState<string[]>([]);
 
   useEffect(() => {
     if (focusedId === null) return;
-    fetchJson<Entity>(`/entities/${focusedId}`)
-      .then((data) => setEntity(data))
-      .catch((error) => console.error(error));
-
-    fetchJson<Relationship[]>(`/entities/${focusedId}/relationships`)
-      .then((data) => setRelationships(data))
-      .catch((error) => console.error(error));
-
     fetchJson<EntityImage[]>(`/entities/${focusedId}/images`)
       .then((data) => setEntityImages(data))
       .catch((error) => console.error(error));

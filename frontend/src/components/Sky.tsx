@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import type { Relationship } from "../types";
 import { EDGE_CLEAR_RADIUS, edgePath } from "../graph/geometry";
 import {
-  PANEL_RESERVE,
+  panelReserve,
   useBoxSize,
   visibleCentre,
   zoomBetween,
@@ -558,7 +558,7 @@ function Sky({
         inside === 0 &&
         (() => {
           const at = toScreen(hovered.x, hovered.y);
-          const uncovered = box.width - PANEL_RESERVE;
+          const uncovered = box.width - panelReserve(box.width);
           let side: "left" | "right" = at.x < youAtRest.x ? "left" : "right";
           if (side === "right" && at.x + 250 > uncovered) side = "left";
           if (side === "left" && at.x - 250 < 0) side = "right";

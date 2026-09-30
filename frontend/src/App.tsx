@@ -10,7 +10,13 @@ import type {
 import { fetchJson } from "./api";
 import { EMPTY_LAYOUT, layoutConstellation, type Layout } from "./graph/layout";
 import { layoutSky } from "./graph/sky";
-import { crossingCamera } from "./graph/camera";
+import {
+  crossingCamera,
+  PANEL_GUTTER,
+  PANEL_MIN,
+  panelReserve,
+  useBoxSize,
+} from "./graph/camera";
 import ThemeToggle from "./components/ThemeToggle";
 import Logo from "./components/Logo";
 import Wordmark from "./components/Wordmark";
@@ -85,6 +91,16 @@ function App() {
     },
     [],
   );
+  // The window, measured: the panel's column is cut from it, and the
+  // constellations aim at what is left. On a window too narrow for both, the
+  // reserve is zero - the panel stops floating and is opened over the map by
+  // hand, which is the only honest answer when there is no room to share.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const box = useBoxSize(rootRef);
+  const reserve = panelReserve(box.width);
+  const floats = reserve > 0;
+  const column = floats ? reserve - PANEL_GUTTER : PANEL_MIN;
+  const [reading, setReading] = useState(false);
 
   useEffect(() => {
     fetchJson<User>("/users/me")
@@ -306,7 +322,7 @@ function App() {
   const showSky = place?.kind === "sky" || journey !== null;
 
   return (
-    <div className="h-screen relative overflow-hidden bg-desk">
+    <div ref={rootRef} className="h-screen relative overflow-hidden bg-desk">
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 p-4 pointer-events-none *:pointer-events-auto">
         {/* lockup: symbol + wordmark, the symbol matching the text box height */}
         <a
@@ -315,7 +331,9 @@ function App() {
           aria-label="lorepsum"
         >
           <Logo className="w-10 h-10" />
-          <Wordmark />
+          {/* on a window this narrow the name gives its room to the place
+              you are standing in, which is the half that changes */}
+          {floats && <Wordmark />}
         </a>
         {/* where you are, beside the name of the place it all belongs to.
             Inside a lore, "lores" is the way back up. */}
@@ -343,7 +361,10 @@ function App() {
       </div>
       {/* the search sits over the panel: finding is the first half of
           reading, and it takes the panel's column, never the map's */}
-      <div className="absolute top-4 right-16 z-20 w-101">
+      <div
+        className="absolute top-4 z-20"
+        style={{ width: column, right: PANEL_GUTTER }}
+      >
         <Search entities={entities} onSelect={(id) => openEntity(id, null)} />
       </div>
 
@@ -390,7 +411,26 @@ function App() {
         />
       )}
 
-      <div className="absolute top-17 right-16 bottom-5 z-10 w-101 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7">
+      {/* the panel floats beside the map while there is room for both; below
+          that it is opened over the map, and closing it gives the map the
+          window back */}
+      {!floats && (
+        <button
+          onClick={() => setReading(!reading)}
+          className="absolute bottom-5 right-16 z-20 rounded-full border border-line bg-canvas px-4 py-2 font-mono text-muted text-[10px] uppercase tracking-[0.18em] cursor-pointer hover:text-accent hover:border-accent transition-colors"
+        >
+          {reading ? "close" : "read"}
+        </button>
+      )}
+      {(floats || reading) && (
+      <div
+        className="absolute top-17 bottom-5 z-10 overflow-y-auto scrollbar-accent rounded-xl border border-line bg-canvas px-6 py-7"
+        style={
+          floats
+            ? { width: column, right: PANEL_GUTTER }
+            : { left: 16, right: 16 }
+        }
+      >
         {showSky && focusedSkyLore ? (
           <LorePanel
             key={focusedSkyLore.lore.id}
@@ -421,6 +461,7 @@ function App() {
           />
         )}
       </div>
+      )}
     </div>
   );
 }
