@@ -344,6 +344,108 @@ Rejected on the way: **cards with the lore's constellation as a cover** — a di
 
 ## 7. Designed, not yet built
 
+### Writing: create, edit, remove (#7)
+
+Every write endpoint exists on the server and none has ever been called by the
+interface. What was missing was not the plumbing but the shape of the act, and
+the shape is one sentence: **nothing here is filled in, everything is said.**
+
+#### Creating starts on a connection, never on a blank form
+
+A form lets an entity be born alone, and a lone entity is the one thing this
+app cannot draw — it floats outside every constellation. So creation begins
+with a **loose end** hanging off the entity in focus, carrying the same `+`
+that closes the lists below. Pull it, and the sentence is written **on the
+thread itself**: the label in mono at its middle, the other end at its tip.
+Release it on an entity that exists and the two are joined; release it on
+empty ground and the entity is **born there**, already connected.
+
+You never create an entity. You make a claim, and the entity arrives as its
+consequence. The first claim of all has somewhere to start from, because the
+you-node is always there.
+
+While the sentence is being written, the rest of the drawing drops to 18%.
+One thing moves at a time, as with the pulse.
+
+#### The same list, three times
+
+Each field opens the list of **what is already yours**, and the last row —
+after a hairline — is always the one action that changes the world:
+
+| the field | the list | the last row |
+|---|---|---|
+| the label | `LABELS YOU USE` | `+ <what you typed>` |
+| the other end | `IN YOUR COLLECTION` | `+ create "…"` |
+| the type | `YOUR TYPES` | `+ new type` |
+
+Joining and creating are never offered as a choice: you write, and the list
+shows what exists. This is also what keeps `sings`, `sing` and `Sings` from
+becoming three labels.
+
+The type is asked **only when the entity is new** — an entity that already
+exists has one. It is not optional: `entity_type_id` is `NOT NULL`, and the
+database settled that long before the interface did.
+
+**No field asks a question.** `who?` and `what does it do?` turned the line
+into an interrogation, which is the form coming back through the window, and
+both lied: a place does nothing, and `Soft Kitty` is not a *who*. The list is
+the instruction; it teaches by showing.
+
+The list is the `LoreCard`'s grammar — canvas, one hairline, no shadow, 224px,
+joined to its field by a thread — in `accent` rather than `beyond`, because
+this is your hand acting. Hover lights a 2px rule on the left, never a fill.
+
+#### Accent is your hand, and it cools
+
+The thread is `accent` while you are pulling and writing. The moment the claim
+becomes a fact, the edge **cools to ink** over 0.9s, and the new row in the
+panel cools with it. Purple never means *recent*; it means *you, now*.
+
+#### Editing happens where the thing is read
+
+In the panel, and in place: the text you read is the text you edit. No pencil,
+no edit mode, no save button — leave the field and it is saved, `Esc` undoes.
+
+The connection row is already two columns, and they already mean the two
+things a row can do:
+
+| `loves` | `Amy Farrah Fowler` |
+|---|---|
+| mono, your claim | serif, a destination |
+| **edits** — in `accent` | **navigates** — in `here` |
+
+Clicking the label reopens the very composer that created it, with the same
+`LABELS YOU USE` list. The **gloss** lives there too, visible only while the
+row is open — it is only ever read on arrival, so it is only ever edited
+where the arrival is defined.
+
+This also settles the warning left in §2: the panel's hovers were purple by
+inheritance. Navigation is `here`; only the half that is your own claim keeps
+the purple.
+
+The edge in the graph stays **drawing, not interface**. It has no click target
+today and gains none: "editing happens in the panel" is one rule, while
+"entities in the panel, connections on the thread" would be two.
+
+#### Removing asks for undo, not for confirmation
+
+The row does not vanish. It dims in place, its target struck through, and the
+label's slot — the half that was your claim — becomes `undo`. Beneath it a
+1px rule in `accent` drains from full width to nothing over **6 seconds**: the
+window, said with the same hairline that separates everything else, without a
+number or a spinner. The undo lives in the hole the thing left; nothing new
+floats in.
+
+Underneath, the two cases differ, and both fail towards the data:
+
+- **a connection** has no `archived_at`, so `DELETE` destroys it. Nothing is
+  sent until the window closes. Reloading mid-window deletes nothing.
+- **an entity** has `archived_at`, so `DELETE` archives at once and undo
+  un-archives. It survives a reload.
+
+A real wastebasket — a place to see and restore what was removed — would need
+`relationships.archived_at`, and that is not built.
+
 ### The maximised gallery
 
 The **preview** in the Focus exists: up to five thumbnails with a `+N` and the count. The cover does **not** appear in that row — it is already large at the top.
