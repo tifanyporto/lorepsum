@@ -9,6 +9,10 @@
   --color-accent: #6b4e96; /* accent — plum */
   --color-here: #94824c; /* here - where you are now */
   --color-beyond: #4c6e94;
+  /* danger — the same ring turned to red: the purple's saturation and
+     lightness, its hue brought round to 10°. Reserved for the one act
+     that destroys something. */
+  --color-danger: #965a4e;
 
   --font-serif: "Fraunces", Georgia, serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -20,6 +24,9 @@
      hands the opacity back to the element, so nothing can be left hidden by
      an animation that did not get to finish. */
   --animate-appear: appear 0.45s ease-out backwards;
+  /* the undo window, drawn: a hairline that empties from left to right over
+     the six seconds a removed connection can still be brought back */
+  --animate-drain: drain 6s linear forwards;
 }
 
 :root[data-theme="dark"] {
@@ -31,6 +38,7 @@
   --color-accent: #ad8bd4;
   --color-here: #d4c28c;
   --color-beyond: #8bafd4;
+  --color-danger: #d4978b;
 }
 
 .pulse-ring {
@@ -47,6 +55,15 @@
   to {
     transform: scale(3.5);
     opacity: 0;
+  }
+}
+
+@keyframes drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
   }
 }
 
@@ -77,7 +94,9 @@
 }
 
 .scrollbar-accent::-webkit-scrollbar {
-  width: 5px;
+  /* a hairline, like every other rule in the app - at 2px the thumb reads as
+     a line in the margin rather than as a control */
+  width: 2px;
 }
 
 .scrollbar-accent::-webkit-scrollbar-track {

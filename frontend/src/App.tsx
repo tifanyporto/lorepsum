@@ -7,7 +7,7 @@ import type {
   Lore,
   Membership,
 } from "./types";
-import { fetchJson } from "./api";
+import { del, fetchJson, patchJson } from "./api";
 import { EMPTY_LAYOUT, layoutConstellation, type Layout } from "./graph/layout";
 import { layoutSky } from "./graph/sky";
 import {
@@ -238,6 +238,45 @@ function App() {
     return () => cancelAnimationFrame(frame);
   }, [crossing, layouts]);
 
+  // Removing a connection is two acts, not one: tell the server, and strike
+  // it off the list in memory. The screen draws from that list and never
+  // from the database, so a row deleted on the server alone would sit there
+  // until the page was reloaded.
+  //
+  // The server goes first. If it refuses, the throw lands before the list is
+  // touched and the screen keeps telling the truth.
+  const removeRelationship = async (id: number) => {
+    await del(`/relationships/${id}`);
+    // a new array, not the old one changed: React compares the reference, so
+    // a list edited in place is a list it believes never moved
+    setAllRelationships((rs) => rs.filter((r) => r.id !== id));
+  };
+
+  // Rewriting a connection. Two things in it are yours to write - the label
+  // and the gloss - and PATCH touches only the fields it is given, so one
+  // cord serves both: whatever is in `changes` is what changes.
+  const editRelationship = async (
+    id: number,
+    changes: Partial<Pick<Relationship, "label" | "gloss">>,
+  ) => {
+    const saved = await patchJson<Relationship>(
+      `/relationships/${id}`,
+      changes,
+    );
+    setAllRelationships((rs) => rs.map((r) => (r.id === id ? saved : r)));
+  };
+
+  // Rewriting an entity, in the same shape as a connection's: whatever is in
+  // `changes` is what changes, and the list every screen reads from is the
+  // one that has to be told.
+  const editEntity = async (
+    id: number,
+    changes: Partial<Pick<Entity, "name" | "description">>,
+  ) => {
+    const saved = await patchJson<Entity>(`/entities/${id}`, changes);
+    setEntities((es) => es.map((e) => (e.id === id ? saved : e)));
+  };
+
   const focus = (id: number, gloss: string | null) => {
     setFocusedId(id);
     setArrivalGloss(gloss);
@@ -450,6 +489,9 @@ function App() {
             entityTypes={entityTypes}
             allRelationships={allRelationships}
             onSelect={showSky ? openEntity : focus}
+            onRemove={removeRelationship}
+            onEdit={editRelationship}
+            onEditEntity={editEntity}
             isOutside={
               openLore
                 ? (id) =>

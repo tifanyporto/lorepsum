@@ -40,8 +40,9 @@ Tokens are named after their **role**, never after the colour. The day blue stop
 | `accent` — the purple: you | `#6b4e96` | `#ad8bd4` |
 | `here` — where you are now | `#94824c` | `#d4c28c` |
 | `beyond` — outside the current lore | `#4c6e94` | `#8bafd4` |
+| `danger` — the one act that destroys | `#965a4e` | `#d4978b` |
 
-`beyond` is not "some blue": it is the purple (`267°, 32%, 44%`) with the **hue rotated to 210°**, keeping saturation and lightness. That is why the two read as siblings.
+`beyond` is not "some blue": it is the purple (`267°, 32%, 44%`) with the **hue rotated to 210°**, keeping saturation and lightness. That is why the two read as siblings. `here` sits at 48° and `danger` at 10° on the same ring — four hues, one saturation, one lightness.
 
 ### Typography
 
@@ -61,6 +62,8 @@ Each of the three colours answers one question, and never another:
 3. **Blue (`beyond`) is outside.** Whatever does not belong to the lore on screen: the border, a connection in the panel that leads elsewhere, the doors on a card.
 
 Everything else is `ink` and `muted`. This is why an expanded connection group is rendered in ink: opening a group is not focusing anything.
+
+**`danger` is the exception, and it is not a fourth meaning.** It belongs to exactly one thing: the row that destroys something — `remove this connection` and whatever joins it later. It never appears on hover of anything else, never carries state, never marks a type. A red that shows up anywhere else stops meaning *this cannot be taken back*, and the only reason to spend a fourth hue is to keep that sentence true.
 
 > **Colour says who. Shape says belonging** — a dot belongs here, a hollow ring is from elsewhere, the diamond is you.
 
