@@ -1,14 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { forceSimulation, forceLink, forceX, forceY } from "d3-force";
 import type { Relationship } from "../types";
-import { EDGE_CLEAR_RADIUS, edgePath, keepClear } from "../graph/geometry";
+import {
+  distanceToSegment,
+  EDGE_CLEAR_RADIUS,
+  edgePath,
+  keepClear,
+} from "../graph/geometry";
 import {
   panelReserve,
   panToReveal,
   useBoxSize,
   visibleCentre,
 } from "../graph/camera";
-import { pageFont, placeLabels, spotsAround } from "../graph/labels";
+import {
+  pageFont,
+  placeLabels,
+  spotsAround,
+  textWidth,
+} from "../graph/labels";
 import type { GraphLink, GraphNode, Layout } from "../graph/layout";
 import YouNode from "./YouNode";
 import LoreCard, { type Door } from "./LoreCard";
@@ -20,6 +30,15 @@ type PositionedLink = { source: GraphNode; target: GraphNode };
 // drawing and the last thing you need, so it settles last - the difference
 // is small enough to feel like depth rather than like a queue.
 const HORIZON_DELAY = "0.18s";
+
+// How far the loose end rests from the node it hangs on. Two rings are
+// tried: it takes the near one when there is room there, and steps out to
+// the far one only when the near one is crowded.
+const STUB_RADII = [92, 124];
+// what the far ring has to beat to be worth the extra distance
+const STEP_OUT_COST = 8;
+// how close the thread's tip has to come before a node takes it
+const LANDING_REACH = 30;
 
 // A pull is a gesture on springs. Every node is tied to its home, and every
 // edge rests at the length it has at home, so at home nothing pulls on
@@ -46,6 +65,8 @@ function Constellation({
   onCamera,
   homesOf,
   onCross,
+  onConnect,
+  usedLabels,
   initialCamera,
 }: {
   layout: Layout;
@@ -62,6 +83,14 @@ function Constellation({
   homesOf: (id: number) => Door[];
   // a door was chosen on a border node's card: cross into that lore there
   onCross: (entityId: number, loreId: number) => void;
+  // a thread was pulled from the focus and landed on another entity
+  onConnect: (
+    sourceId: number,
+    targetId: number,
+    label: string,
+  ) => Promise<void>;
+  // the labels already in use, the commonest first
+  usedLabels: string[];
   // where the camera starts, when it does not start on you: after a crossing
   // it starts where the crossing left it, then reframes on the focus
   initialCamera?: { pan: { x: number; y: number }; zoom: number };
@@ -119,6 +148,17 @@ function Constellation({
   } | null>(null);
   // the node being pulled, shown lit and named like a hovered one
   const [pulledId, setPulledId] = useState<number | null>(null);
+  // The thread out of the focus, in the drawing's own coordinates. While it
+  // is being pulled it follows the pointer and `onto` is whoever is under it;
+  // once let go on someone, `writing` is the sentence being written on it.
+  const [thread, setThread] = useState<{
+    x: number;
+    y: number;
+    onto: GraphNode | null;
+    writing: boolean;
+  } | null>(null);
+  const [claim, setClaim] = useState("");
+  const [claimTyped, setClaimTyped] = useState(false);
   // the live simulation moves the nodes in place; this only asks for a redraw
   const [, setFrame] = useState(0);
   const boxSize = useBoxSize(svgRef);
@@ -305,10 +345,53 @@ function Constellation({
   if (selfId != null && focusedId === selfId)
     selfEdges.forEach((r) => neighborIds.add(r.target_id));
 
+  // Where the loose end hangs from: the focused node, or the origin when the
+  // focus is you - you are pinned there and never enter the simulation.
+  const focusedNode = graphNodes.find((n) => n.id === focusedId);
+  const anchor =
+    focusedId === null
+      ? null
+      : selfId != null && focusedId === selfId
+        ? { x: 0, y: 0 }
+        : focusedNode?.x != null && focusedNode.y != null
+          ? { x: focusedNode.x, y: focusedNode.y }
+          : null;
+  // whoever the focus already reaches: a thread cannot be pulled to them
+  // twice, so they are not offered as a landing
+  const alreadyReached = new Set(
+    allRelationships
+      .filter((r) => r.source_id === focusedId)
+      .map((r) => r.target_id),
+  );
+  const landing =
+    thread?.onto != null && thread.onto.x != null && thread.onto.y != null
+      ? { x: thread.onto.x, y: thread.onto.y }
+      : thread !== null
+        ? { x: thread.x, y: thread.y }
+        : null;
+
+  const dropThread = () => {
+    setThread(null);
+    setClaim("");
+    setClaimTyped(false);
+  };
+  const commitThread = (label: string) => {
+    const target = thread?.onto ?? null;
+    const next = label.trim();
+    dropThread();
+    if (target === null || focusedId === null || next === "") return;
+    onConnect(focusedId, target.id, next).catch((error) =>
+      console.error(error),
+    );
+  };
+
   // The names on screen, and where each one goes. The focus is placed first
   // and keeps the spot under its node; then whatever is under the pointer;
   // then the neighbours, moving around the names already there. None ever
   // covers another: a neighbour with nowhere to go waits for the hover.
+  //
+  // (the loose end is placed after these, because a name is one of the things
+  // it has to keep away from)
   // a border node grows when it is named - next to the focus, or with its
   // card open - and otherwise stays a small hollow ring
   const cardId = cards.card?.id ?? null;
@@ -355,6 +438,77 @@ function Constellation({
       ...(selfId != null ? [{ x: 0, y: 0, r: 34 }] : []),
     ],
   );
+
+  // Everything the loose end has to keep away from, each written as a
+  // segment so one measurement answers for all three: a node is a segment
+  // with no length, an edge is the line between its ends, and a name is the
+  // run its baseline draws - the end must clear the whole word, not the
+  // point the word hangs from.
+  const crowded: [
+    { x: number; y: number },
+    { x: number; y: number },
+  ][] = [];
+  for (const n of graphNodes) {
+    if (n.x == null || n.y == null) continue;
+    const at = { x: n.x, y: n.y };
+    crowded.push([at, at]);
+    const name = labels.get(String(n.id));
+    if (name !== undefined) {
+      const w = textWidth(n.name, 10, family);
+      const left =
+        name.anchor === "start"
+          ? name.x
+          : name.anchor === "middle"
+            ? name.x - w / 2
+            : name.x - w;
+      crowded.push([
+        { x: left, y: name.y },
+        { x: left + w, y: name.y },
+      ]);
+    }
+  }
+  for (const l of graphLinks) {
+    if (l.source.x == null || l.target.x == null) continue;
+    crowded.push([
+      { x: l.source.x, y: l.source.y ?? 0 },
+      { x: l.target.x, y: l.target.y ?? 0 },
+    ]);
+  }
+  // your own edges leave the origin, and they are drawn too
+  for (const r of selfEdges) {
+    const t = graphNodes.find((n) => n.id === r.target_id);
+    if (t?.x == null || t.y == null) continue;
+    crowded.push([
+      { x: 0, y: 0 },
+      { x: t.x, y: t.y },
+    ]);
+  }
+
+  // The end goes where there is most room. Every direction is tried on two
+  // rings, and the winner is the tip that sits farthest from everything
+  // above - with the outer ring paying a small penalty, so the end only
+  // wanders out when the near ring is genuinely crowded.
+  let stub: { x: number; y: number } | null = null;
+  if (anchor !== null) {
+    let best = -Infinity;
+    for (const reach of STUB_RADII) {
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        const tip = {
+          x: anchor.x + Math.cos(a) * reach,
+          y: anchor.y + Math.sin(a) * reach,
+        };
+        let clear = Infinity;
+        for (const [p, q] of crowded)
+          clear = Math.min(clear, distanceToSegment(tip, p, q));
+        const score = clear - (reach === STUB_RADII[0] ? 0 : STEP_OUT_COST);
+        if (score > best) {
+          best = score;
+          stub = tip;
+        }
+      }
+    }
+  }
 
   // what a click on a node does: focus it and answer for the arrival. It does
   // not move the camera itself - a node you just clicked is a node you can
@@ -409,6 +563,24 @@ function Constellation({
           });
         }}
         onPointerMove={(e) => {
+          // the thread has the pointer before anything else: while it is out,
+          // this is not a pan and not a pull
+          if (thread !== null && !thread.writing) {
+            const p = toGraph(e.clientX, e.clientY);
+            let onto: GraphNode | null = null;
+            let nearest = LANDING_REACH;
+            for (const n of graphNodes) {
+              if (n.id === focusedId || n.x == null || n.y == null) continue;
+              if (alreadyReached.has(n.id)) continue;
+              const d = Math.hypot(n.x - p.x, n.y - p.y);
+              if (d < nearest) {
+                nearest = d;
+                onto = n;
+              }
+            }
+            setThread({ x: p.x, y: p.y, onto, writing: false });
+            return;
+          }
           // a press that started on a node: a click until it travels far
           // enough, then a pull
           const press = pressRef.current;
@@ -434,6 +606,14 @@ function Constellation({
           });
         }}
         onPointerUp={() => {
+          // let go on someone: the thread stays, and the sentence is written
+          // on it. Let go on empty ground: nothing was claimed.
+          if (thread !== null && !thread.writing) {
+            if (thread.onto === null) dropThread();
+            else setThread({ ...thread, writing: true });
+            setDragStart(null);
+            return;
+          }
           endPress(true);
           setDragStart(null);
         }}
@@ -729,6 +909,84 @@ function Constellation({
             );
           })}
 
+          {/* The loose end, and the thread when it is out. It hangs off the
+              focus carrying the same `+` that closes the lists in the panel,
+              and while it is being pulled it is accent throughout - purple is
+              your hand on something, and it lets go when the claim is made. */}
+          {anchor !== null && stub !== null && thread === null && (
+            <g
+              className="cursor-grab"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                setThread({ x: stub.x, y: stub.y, onto: null, writing: false });
+                setClaim("");
+                setClaimTyped(false);
+              }}
+            >
+              <line
+                x1={anchor.x}
+                y1={anchor.y}
+                x2={stub.x}
+                y2={stub.y}
+                stroke="var(--color-accent)"
+                strokeOpacity={0.4}
+                strokeWidth={1}
+                strokeDasharray="3 5"
+              />
+              <circle
+                cx={stub.x}
+                cy={stub.y}
+                r={11}
+                fill="var(--color-desk)"
+                stroke="var(--color-accent)"
+                strokeWidth={1.5}
+              />
+              <path
+                d={`M ${stub.x - 5} ${stub.y} h 10 M ${stub.x} ${stub.y - 5} v 10`}
+                stroke="var(--color-accent)"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+              {/* a target the hand can actually find */}
+              <circle cx={stub.x} cy={stub.y} r={20} fill="transparent" />
+            </g>
+          )}
+          {anchor !== null && landing !== null && (
+            <g>
+              <line
+                x1={anchor.x}
+                y1={anchor.y}
+                x2={landing.x}
+                y2={landing.y}
+                stroke="var(--color-accent)"
+                strokeWidth={1.5}
+                strokeOpacity={0.85}
+                strokeDasharray={thread?.writing ? "0" : "4 4"}
+              />
+              {thread?.onto == null && (
+                <circle
+                  cx={landing.x}
+                  cy={landing.y}
+                  r={6}
+                  fill="var(--color-desk)"
+                  stroke="var(--color-accent)"
+                  strokeWidth={1.5}
+                />
+              )}
+              {thread?.onto != null && (
+                <circle
+                  cx={landing.x}
+                  cy={landing.y}
+                  r={13}
+                  fill="none"
+                  stroke="var(--color-accent)"
+                  strokeWidth={1.2}
+                  strokeOpacity={0.8}
+                />
+              )}
+            </g>
+          )}
+
           {/* the names, over every node, each where placeLabels put it.
               None of them exists in the sky, so entering a lore is where they
               are born: they arrive instead of being switched on. */}
@@ -772,6 +1030,77 @@ function Constellation({
           )}
         </g>
       </svg>
+      {/* The sentence, written on the thread itself. It is HTML over the
+          drawing, placed at the middle of the line in screen coordinates -
+          the same trick the LoreCard uses to hang beside a node. */}
+      {thread?.writing && thread.onto != null && anchor !== null &&
+        landing !== null &&
+        (() => {
+          const mid = {
+            x: centre.x + pan.x + ((anchor.x + landing.x) / 2) * zoom,
+            y: centre.y + pan.y + ((anchor.y + landing.y) / 2) * zoom,
+          };
+          const query = claim.trim().toLowerCase();
+          const offered = usedLabels
+            .filter((l) => !claimTyped || l.includes(query))
+            .slice(0, 5);
+          const isNew =
+            claimTyped &&
+            query !== "" &&
+            !usedLabels.some((l) => l.toLowerCase() === query);
+          return (
+            <div
+              className="absolute z-30 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: mid.x, top: mid.y }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <input
+                autoFocus
+                value={claim}
+                onChange={(e) => {
+                  setClaim(e.target.value);
+                  setClaimTyped(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitThread(claim);
+                  if (e.key === "Escape") dropThread();
+                }}
+                className="w-33 text-center font-mono text-[12px] text-accent bg-desk border-0 border-b border-accent outline-none py-0.5"
+              />
+              <div className="mt-2.5 w-56 rounded-md border border-accent/50 bg-canvas px-3.5 py-3 animate-fade-in">
+                <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-muted mb-1.5">
+                  labels you use
+                </p>
+                {offered.map((label) => (
+                  <button
+                    key={label}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      commitThread(label);
+                    }}
+                    className="block w-full text-left py-0.5 pl-2 border-l-2 border-transparent hover:border-accent font-mono text-[12px] text-muted hover:text-accent cursor-pointer transition-colors truncate"
+                  >
+                    {label}
+                  </button>
+                ))}
+                {isNew && (
+                  <button
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      commitThread(claim);
+                    }}
+                    className="block w-full text-left py-0.5 pl-2 border-l-2 border-transparent hover:border-accent font-mono text-[12px] text-accent cursor-pointer transition-colors truncate"
+                  >
+                    + {claim.trim()}
+                  </button>
+                )}
+                <p className="mt-2 pt-2 border-t border-line font-mono text-[11px] text-muted opacity-70 truncate">
+                  → {thread.onto.name}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
       {(() => {
         const n = graphNodes.find((m) => m.id === cardId);
         if (n === undefined) return null;

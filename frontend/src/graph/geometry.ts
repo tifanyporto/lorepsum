@@ -58,6 +58,29 @@ export function forceKeepOut<N extends SimulationNodeDatum>(
 // straight line already leans to and only grazes the zone at a single point.
 // Each bent edge gets its own curve from its own ends — they never pile onto
 // one shared circle. The answer is the control point of that curve.
+// The distance from a point to a segment: the length of the shortest line
+// that reaches it. A segment whose two ends are the same point is a point,
+// so this answers for both, and one loop can weigh nodes, edges and names
+// against each other without caring which is which.
+export function distanceToSegment(
+  p: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = dx * dx + dy * dy;
+  // how far along the segment the nearest point lies, held inside its ends
+  const t =
+    length === 0
+      ? 0
+      : Math.max(
+          0,
+          Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length),
+        );
+  return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
+}
+
 export function bendAround(
   a: { x: number; y: number },
   b: { x: number; y: number },

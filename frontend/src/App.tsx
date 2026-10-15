@@ -7,7 +7,7 @@ import type {
   Lore,
   Membership,
 } from "./types";
-import { del, fetchJson, patchJson } from "./api";
+import { del, fetchJson, patchJson, postJson } from "./api";
 import { EMPTY_LAYOUT, layoutConstellation, type Layout } from "./graph/layout";
 import { layoutSky } from "./graph/sky";
 import {
@@ -185,6 +185,17 @@ function App() {
       .sort((a, b) => b.weight - a.weight || a.name.localeCompare(b.name))
       .map(({ id, name }) => ({ id, name }));
 
+  // the labels you have used, the commonest first - offered wherever a claim
+  // is written, so the same word is reused instead of spelled again
+  const usedLabels = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of allRelationships)
+      if (r.label) counts.set(r.label, (counts.get(r.label) ?? 0) + 1);
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([label]) => label);
+  }, [allRelationships]);
+
   // a passage runs on its own clock; when a dive ends, the lore takes over
   useEffect(() => {
     if (journey === null) return;
@@ -250,6 +261,23 @@ function App() {
     // a new array, not the old one changed: React compares the reference, so
     // a list edited in place is a list it believes never moved
     setAllRelationships((rs) => rs.filter((r) => r.id !== id));
+  };
+
+  // Making a connection. The claim is the thing being created; the entities
+  // at its ends already exist, so this is the whole of it.
+  const createRelationship = async (
+    source_id: number,
+    target_id: number,
+    label: string,
+  ) => {
+    const made = await postJson<Relationship>("/relationships", {
+      source_id,
+      target_id,
+      label,
+      gloss: null,
+      weight: 1,
+    });
+    setAllRelationships((rs) => [...rs, made]);
   };
 
   // Rewriting a connection. Two things in it are yours to write - the label
@@ -446,6 +474,8 @@ function App() {
           onCamera={reportCamera}
           homesOf={(id) => homesOf(id, place.loreId)}
           onCross={cross}
+          onConnect={createRelationship}
+          usedLabels={usedLabels}
           initialCamera={arrivalCamera}
         />
       )}

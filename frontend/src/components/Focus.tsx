@@ -305,7 +305,7 @@ function Focus({
                 }
                 if (e.key === "Escape") setCardField(null);
               }}
-              className="w-full resize-none font-serif text-muted text-sm leading-[1.62] mt-2.75 bg-transparent border-0 border-b border-accent outline-none"
+              className="w-full resize-none scrollbar-accent font-serif text-muted text-sm leading-[1.62] mt-2.75 bg-transparent border-0 border-b border-accent outline-none"
             />
           ) : (
             <p
@@ -551,7 +551,7 @@ function Focus({
                                     }
                                     if (e.key === "Escape") closeEditor();
                                   }}
-                                  className="w-full resize-none font-serif text-[13.5px] leading-[1.55] text-muted bg-transparent border-0 border-b border-accent outline-none"
+                                  className="w-full resize-none scrollbar-accent font-serif text-[13.5px] leading-[1.55] text-muted bg-transparent border-0 border-b border-accent outline-none"
                                 />
                               </div>
                             </>

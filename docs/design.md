@@ -370,6 +370,18 @@ you-node is always there.
 While the sentence is being written, the rest of the drawing drops to 18%.
 One thing moves at a time, as with the pulse.
 
+#### In the sky, the same gesture makes a lore
+
+The loose end belongs to the screen it hangs on, and each screen is made of a
+different thing: a constellation is made of entities, the sky is made of
+lores. So the same `+`, pulled in the sky, makes a **lore**.
+
+There it has nowhere to land, because two lores are never joined (§6) — only
+entities are. You pull and let go, and the sentence asks for one word: the
+name. That is not a thing created alone, though. Every lore carries an
+`owner_id`, so the thread leaving you and reaching no one **is** the claim:
+*this slice is mine.* The same sentence, with its other end implied.
+
 #### The same list, three times
 
 Each field opens the list of **what is already yours**, and the last row —

@@ -87,15 +87,27 @@
   }
 }
 
-/* thin scrollbar, in the accent */
-.scrollbar-accent {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-accent) transparent;
+/* A hairline scrollbar, in a watered-down accent. Full-strength plum at 2px
+   reads as a hard rule drawn down the edge; at 45% it is a presence rather
+   than a line, and it follows the theme on its own because it is the same
+   token, only thinner.
+
+   The two ways of saying it cannot share a block. A scroller that declares
+   `scrollbar-width` or `scrollbar-color` has its `::-webkit-scrollbar` rules
+   ignored by Chrome entirely - measured: 10px in one block, 2px apart. So the
+   standard properties, which are all Firefox understands, sit behind a query
+   only Firefox answers. Chrome takes the pseudo-elements below and gets its
+   2px; Firefox takes these and gets its own `thin`, as fine as it goes there. */
+@supports (-moz-appearance: none) {
+  .scrollbar-accent {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
+      transparent;
+  }
 }
 
 .scrollbar-accent::-webkit-scrollbar {
-  /* a hairline, like every other rule in the app - at 2px the thumb reads as
-     a line in the margin rather than as a control */
+  /* a hairline, like every other rule in the app */
   width: 2px;
 }
 
@@ -104,7 +116,7 @@
 }
 
 .scrollbar-accent::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
   border-radius: 999px;
 }
 
